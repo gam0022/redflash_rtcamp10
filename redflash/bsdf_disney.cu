@@ -21,6 +21,10 @@
 
 using namespace optix;
 
+// Scene wide variables
+rtDeclareVariable(float, scene_epsilon, , );
+
+
 RT_FUNCTION float sqr(float x) { return x * x; }
 
 RT_FUNCTION float SchlickFresnel(float u)
@@ -124,6 +128,8 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
         dir = 2.0f*dot(V, half)*half - V; //reflection vector
 
     }
+
+    prd.origin = state.hitpoint + state.ffnormal * scene_epsilon * 10.0;
     prd.direction = dir;
 }
 

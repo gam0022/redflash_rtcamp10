@@ -4,6 +4,10 @@
 
 using namespace optix;
 
+// Scene wide variables
+rtDeclareVariable(float, scene_epsilon, , );
+
+
 RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_pathtrace &prd)
 {
     float3 n = state.ffnormal;
@@ -28,6 +32,7 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
     cosine_sample_hemisphere(r1, r2, dir);
     onb.inverse_transform(dir);
 
+    prd.origin = state.hitpoint + state.ffnormal * scene_epsilon * 10.0;
     prd.direction = dir;
 }
 

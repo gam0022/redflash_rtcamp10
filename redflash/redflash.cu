@@ -381,7 +381,7 @@ RT_PROGRAM void closest_hit()
     float3 world_geometric_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, geometric_normal));
     float3 ffnormal = faceforward(world_shading_normal, -ray.direction, world_geometric_normal);
 
-    float3 hitpoint = ray.origin + t_hit * ray.direction + ffnormal * scene_epsilon * 10.0;
+    float3 hitpoint = ray.origin + t_hit * ray.direction;
 
     State state;
     state.hitpoint = hitpoint;
@@ -396,9 +396,6 @@ RT_PROGRAM void closest_hit()
     current_prd.albedo = mat.albedo;
     current_prd.normal = ffnormal;
     current_prd.distance = t_hit;
-
-    // FIXME: Sampleにもっていく
-    current_prd.origin = hitpoint;
 
     // FIXME: bsdfId から判定
     current_prd.specularBounce = false;
