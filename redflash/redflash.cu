@@ -137,6 +137,7 @@ RT_PROGRAM void pathtrace_camera()
         prd.seed = seed;
         prd.depth = 0;
         prd.distance = distance;
+        prd.scene_id = 0;
 
         // Each iteration is a segment of the ray path.  The closest hit will
         // return new segments to be traced here.
@@ -240,6 +241,7 @@ RT_PROGRAM void debug_camera()
     prd.seed = 0;
     prd.depth = 0;
     prd.distance = 0;
+    prd.scene_id = 0;
 
     Ray ray = make_Ray(ray_origin, ray_direction, RADIANCE_RAY_TYPE, scene_epsilon, RT_DEFAULT_MAX);
     prd.wo = -ray.direction;
@@ -455,7 +457,10 @@ RT_PROGRAM void exception()
 //
 //-----------------------------------------------------------------------------
 
-rtTextureSampler<float4, 2> envmap;
+rtTextureSampler<float4, 2> envmap0;
+rtTextureSampler<float4, 2> envmap1;
+
+
 RT_PROGRAM void envmap_miss()
 {
     float theta = atan2f(ray.direction.x, ray.direction.z);
@@ -464,14 +469,16 @@ RT_PROGRAM void envmap_miss()
     // 環境マップを回転
     // float u = (theta + M_PIf) * (0.5f * M_1_PIf);
     float u = (theta) * (0.5f * M_1_PIf);
-
     float v = 0.5f * (1.0f + sin(phi));
 
-    // float intensity = time < 5 ? 1 : 0.2;
-    // float intensity = 1;
-    float s = 0.5 + 0.5 * sin(time * TAU / 10);
-    float intensity = lerp(0.05, 1.0, s);
-    current_prd.radiance += make_float3(tex2D(envmap, u, v)) * current_prd.attenuation * intensity;
+    if (current_prd.scene_id == 0)
+    {
+        current_prd.radiance += make_float3(tex2D(envmap0, u, v)) * current_prd.attenuation * 0.4;
+    }
+    else if (current_prd.scene_id == 1)
+    {
+        current_prd.radiance += make_float3(tex2D(envmap1, u, v)) * current_prd.attenuation;
+    }
 
     current_prd.albedo = make_float3(0.0f);
     current_prd.normal = -ray.direction;

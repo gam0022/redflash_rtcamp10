@@ -262,6 +262,29 @@ float4 map_id(float3 pos)
     return m0;
 }
 
+float4 map_id_(float3 pos)
+{
+    float3 p = pos;
+
+    float a = 10;
+    p.x = opRep(p.x, a);
+    p.y = opRep(p.y, a);
+    p.z = opRep(p.z, a);
+
+    float4 m0 = make_float4(length(p) - 0.3, 0, 0, 0);
+
+    /*if (current_prd.scene_id == 0)
+    {
+
+    }
+    else if (current_prd.scene_id == 1)
+    {
+        m0 = make_float4(length(p) - 0.5, 1, 0, 0);
+    }*/
+
+    return m0;
+}
+
 float map(float3 pos)
 {
     return map_id(pos).x;

@@ -81,7 +81,7 @@ double animate_begin_time;
 double animate_time = 0.0f;
 
 // sampling
-int max_depth = 1;
+int max_depth = 3;
 int rr_begin_depth = 1;// ロシアンルーレット開始のdepth（未使用）
 int sample_per_launch = 1;
 int frame_number = 1;
@@ -521,7 +521,7 @@ void createContext()
     pgram_intersection_sphere = context->createProgramFromPTXString(ptx, "sphere_intersect");
 
     // BSDF
-    std::vector<std::string> bsdf_paths{ "bsdf_diffuse.cu", "bsdf_disney.cu" };
+    std::vector<std::string> bsdf_paths{ "bsdf_diffuse.cu", "bsdf_disney.cu", "bsdf_portal.cu" };
     setupBSDF(bsdf_paths);
 }
 
@@ -665,6 +665,15 @@ GeometryGroup createGeometryTriangles()
 
     */
 
+    // Mesh portal
+    std::string mesh_file = resolveDataPath("mesh/portal.obj");
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(3.0f)));
+    mat.bsdf = PORTAL;
+    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
+    mat.metallic = 0.8f;
+    mat.roughness = 0.05f;
+    registerMaterial(gis.back(), mat);
+
     GeometryGroup shadow_group = context->createGeometryGroup(gis.begin(), gis.end());
     shadow_group->setAcceleration(context->createAcceleration("Trbvh"));
     return shadow_group;
@@ -680,7 +689,7 @@ GeometryGroup createGeometry()
     // Raymarcing
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f),
-        make_float3(12.0f)));
+        make_float3(1.0f)));
     mat.albedo = make_float3(0.6f);
     mat.metallic = 0.8f;
     mat.roughness = 0.05f;
@@ -804,8 +813,11 @@ void setupScene()
 
     // Envmap
     const float3 default_color = make_float3(1.0f, 1.0f, 1.0f);
-    const std::string texpath = resolveDataPath("polyhaven/neon_photostudio_4k.hdr");
-    context["envmap"]->setTextureSampler(sutil::loadTexture(context, texpath, default_color));
+    const std::string texpath0 = resolveDataPath("polyhaven/neon_photostudio_4k.hdr");
+    context["envmap0"]->setTextureSampler(sutil::loadTexture(context, texpath0, default_color));
+
+    const std::string texpath1 = resolveDataPath("polyhaven/kloppenheim_06_puresky_4k.hdr");
+    context["envmap1"]->setTextureSampler(sutil::loadTexture(context, texpath1, default_color));
 
     // Material Parameters
     m_bufferMaterialParameters = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_USER);
@@ -821,12 +833,12 @@ void setupCamera()
     camera_up = make_float3(0.0f, 1.0f, 0.0f);
 
     // 少し遠景
-    camera_eye = make_float3(13.91f, 166.787f, 413.00f);
-    camera_lookat = make_float3(-6.59f, 169.94f, -9.11f);
+    //camera_eye = make_float3(13.91f, 166.787f, 413.00f);
+    //camera_lookat = make_float3(-6.59f, 169.94f, -9.11f);
 
     // 近づいたカット
-    camera_eye = make_float3(1.65f, 196.01f, 287.97f);
-    camera_lookat = make_float3(-7.06f, 76.34f, 26.96f);
+    //camera_eye = make_float3(1.65f, 196.01f, 287.97f);
+    //camera_lookat = make_float3(-7.06f, 76.34f, 26.96f);
 
     // Lucyを中心にしたカット
     //camera_eye = make_float3(0.73f, 160.33f, 220.03f);
@@ -845,8 +857,8 @@ void setupCamera()
     //camera_lookat = make_float3(-7.06f, 76.34f, 26.96f);
 
     // 中心
-    // camera_eye = make_float3(0, 0, 0);
-    // camera_lookat = make_float3(0, 0, -30.0f);
+    camera_eye = make_float3(0, 3.0f, 10.0f);
+    camera_lookat = make_float3(0, 3.0f, 0.0f);
 
     camera_rotate = Matrix4x4::identity();
 }
@@ -855,7 +867,7 @@ void setupCamera()
 void updateFrame(float time)
 {
     // NOTE: falseにすれば自由カメラになる
-    bool update_camera = true;
+    bool update_camera = !true;
     // float t = time;
     float vignetteIntensity = 0.9;
 

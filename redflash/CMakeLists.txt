@@ -32,7 +32,7 @@ if(GLUT_FOUND AND OPENGL_FOUND)
     include_directories(${GLUT_INCLUDE_DIR})
     add_definitions(-DGLUT_FOUND -DGLUT_NO_LIB_PRAGMA)
 
-    OPTIX_add_sample_executable( redflash 
+    OPTIX_add_sample_executable( redflash
         redflash.cpp
         redflash.cu
         redflash.h
@@ -42,6 +42,7 @@ if(GLUT_FOUND AND OPENGL_FOUND)
 
         bsdf_diffuse.cu
         bsdf_disney.cu
+        bsdf_portal.cu
 
         # These files are common among multiple samples
         random.h

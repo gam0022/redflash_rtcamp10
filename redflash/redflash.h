@@ -21,7 +21,8 @@ struct State
 enum BSDFType
 {
     DIFFUSE,
-    DISNEY
+    DISNEY,
+    PORTAL
 };
 
 enum MaterialAnimationProgramType
@@ -111,6 +112,8 @@ struct PerRayData_pathtrace
     bool specularBounce;
 
     float distance;
+
+    int scene_id;
 };
 
 struct PerRayData_pathtrace_shadow
