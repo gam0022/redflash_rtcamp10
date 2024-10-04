@@ -689,7 +689,7 @@ GeometryGroup createGeometry()
     // Raymarcing
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f),
-        make_float3(1.0f)));
+        make_float3(12.0f)));
     mat.albedo = make_float3(0.6f);
     mat.metallic = 0.8f;
     mat.roughness = 0.05f;

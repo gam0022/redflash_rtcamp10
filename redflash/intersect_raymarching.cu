@@ -216,8 +216,13 @@ float3 stereographic(float4 p4)
 
 #define _INVERSION4D_ON 1
 
-float4 map_id(float3 pos)
+float4 map_id(float3 pos, int scene_id)
 {
+    if (scene_id == 1)
+    {
+        return make_float4(length(pos) - 2, 1, 0, 0);
+    }
+
     #if _INVERSION4D_ON
         float f = length(pos);
         float4 p4d = inverseStereographic(pos);
@@ -285,37 +290,28 @@ float4 map_id_(float3 pos)
     return m0;
 }
 
-float map(float3 pos)
+float map(float3 pos, int scene_id)
 {
-    return map_id(pos).x;
+    return map_id(pos, scene_id).x;
 }
 
-#define calcNormal(p, dFunc, eps) normalize(\
-    make_float3( eps, -eps, -eps) * dFunc(p + make_float3( eps, -eps, -eps)) + \
-    make_float3(-eps, -eps,  eps) * dFunc(p + make_float3(-eps, -eps,  eps)) + \
-    make_float3(-eps,  eps, -eps) * dFunc(p + make_float3(-eps,  eps, -eps)) + \
-    make_float3( eps,  eps,  eps) * dFunc(p + make_float3( eps,  eps,  eps)))
-
-float3 calcNormalBasic(float3 p, float eps)
-{
-    return normalize(make_float3(
-        map(p + make_float3(eps, 0.0, 0.0)) - map(p + make_float3(-eps, 0.0, 0.0)),
-        map(p + make_float3(0.0, eps, 0.0)) - map(p + make_float3(0.0, -eps, 0.0)),
-        map(p + make_float3(0.0, 0.0, eps)) - map(p + make_float3(0.0, 0.0, -eps))
-    ));
-}
+#define calcNormal(p, dFunc, eps, scene_id) normalize(\
+    make_float3( eps, -eps, -eps) * dFunc(p + make_float3( eps, -eps, -eps), scene_id) + \
+    make_float3(-eps, -eps,  eps) * dFunc(p + make_float3(-eps, -eps,  eps), scene_id) + \
+    make_float3(-eps,  eps, -eps) * dFunc(p + make_float3(-eps,  eps, -eps), scene_id) + \
+    make_float3( eps,  eps,  eps) * dFunc(p + make_float3( eps,  eps,  eps), scene_id))
 
 // https://www.shadertoy.com/view/lttGDn
-float calcEdge(float3 p, float width)
+float calcEdge(float3 p, float width, int scene_id)
 {
     float edge = 0.0;
     float2 e = make_float2(width, 0.0f);
 
     // Take some distance function measurements from either side of the hit point on all three axes.
-    float d1 = map(p + make_float3(width, 0.0f, 0.0f)), d2 = map(p - make_float3(width, 0.0f, 0.0f));
-    float d3 = map(p + make_float3(0.0f, width, 0.0f)), d4 = map(p - make_float3(0.0f, width, 0.0f));
-    float d5 = map(p + make_float3(0.0f, 0.0f, width)), d6 = map(p - make_float3(0.0f, 0.0f, width));
-    float d = map(p) * 2.;	// The hit point itself - Doubled to cut down on calculations. See below.
+    float d1 = map(p + make_float3(width, 0.0f, 0.0f), scene_id), d2 = map(p - make_float3(width, 0.0f, 0.0f), scene_id);
+    float d3 = map(p + make_float3(0.0f, width, 0.0f), scene_id), d4 = map(p - make_float3(0.0f, width, 0.0f), scene_id);
+    float d5 = map(p + make_float3(0.0f, 0.0f, width), scene_id), d6 = map(p - make_float3(0.0f, 0.0f, width), scene_id);
+    float d = map(p, scene_id) * 2.;	// The hit point itself - Doubled to cut down on calculations. See below.
 
     // Edges - Take a geometry measurement from either side of the hit point. Average them, then see how
     // much the value differs from the hit point itself. Do this for X, Y and Z directions. Here, the sum
@@ -333,15 +329,15 @@ float calcEdge(float3 p, float width)
     return edge;
 }
 
-RT_CALLABLE_PROGRAM void materialAnimation_Nop(MaterialParameter& mat, State& state)
+RT_CALLABLE_PROGRAM void materialAnimation_Nop(MaterialParameter& mat, State& state, int scene_id)
 {
     // nop
 }
 
-RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, State& state)
+RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, State& state, int scene_id)
 {
     float3 p = state.hitpoint;
-    float4 m = map_id(p);
+    float4 m = map_id(p, scene_id);
     uint id = uint(m.y);
 
     if (id == 0)
@@ -358,7 +354,7 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
         mat.albedo = make_float3(0.2, 0.2, 0.9);
         mat.roughness = 0.005;
         mat.metallic = 0.5;
-        float edge = calcEdge(p, 0.02);
+        float edge = calcEdge(p, 0.02, scene_id);
         float a = (mod(time, 4) < 2.0) ? saturate(sin((m.w * 2 - time * 2) * TAU)) : 0;
         mat.emission += edge * make_float3(0.2, 0.2, 20) * a;
         mat.clearcoat = 0.9;
@@ -390,7 +386,7 @@ RT_PROGRAM void intersect(int primIdx)
     for (int i = 0; i < raymarching_iteration; i++)
     {
         p = ray.origin + t * ray.direction;
-        d = map(p);
+        d = map(p, current_prd.scene_id);
         t += d;
         eps = scene_epsilon * t;
         if (abs(d) < eps || t > ray.tmax)
@@ -401,7 +397,7 @@ RT_PROGRAM void intersect(int primIdx)
 
     if (t < ray.tmax && rtPotentialIntersection(t))
     {
-        shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon);
+        shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon, current_prd.scene_id);
         texcoord = make_float3(p.x, p.y, 0);
         rtReportIntersection(0);
     }
@@ -422,7 +418,7 @@ RT_PROGRAM void intersect_AutoRelaxation(int primIdx)
     }
 
     float eps = scene_epsilon * t;
-    float r = map(ray.origin + t * ray.direction);
+    float r = map(ray.origin + t * ray.direction, current_prd.scene_id);
     int i = 1;
     float z = r;
     float m = -1;
@@ -433,7 +429,7 @@ RT_PROGRAM void intersect_AutoRelaxation(int primIdx)
         && i < raymarching_iteration)  // didn't converge
     {
         float T = t + z;
-        float R = map(ray.origin + T * ray.direction);
+        float R = map(ray.origin + T * ray.direction, current_prd.scene_id);
         bool doBackStep = z > abs(R) + r;
         //bool doBackStep = t + abs(r) < T - abs(R);
         float M = calcSlope(t, T, r, R);
@@ -459,7 +455,7 @@ RT_PROGRAM void intersect_AutoRelaxation(int primIdx)
     if (retT < ray.tmax && rtPotentialIntersection(retT))
     {
         float3 p = ray.origin + retT * ray.direction;
-        shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon);
+        shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon, current_prd.scene_id);
         texcoord = make_float3(p.x, p.y, 0);
         rtReportIntersection(0);
     }
