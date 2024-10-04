@@ -216,7 +216,7 @@ float3 stereographic(float4 p4)
 
 #define _INVERSION4D_ON 1
 
-float4 map_id(float3 pos, int scene_id)
+float4 map_id_rtcamp9(float3 pos, int scene_id)
 {
     if (scene_id == 1)
     {
@@ -267,7 +267,7 @@ float4 map_id(float3 pos, int scene_id)
     return m0;
 }
 
-float4 map_id_(float3 pos)
+float4 map_id(float3 pos, int scene_id)
 {
     float3 p = pos;
 
@@ -276,16 +276,12 @@ float4 map_id_(float3 pos)
     p.y = opRep(p.y, a);
     p.z = opRep(p.z, a);
 
-    float4 m0 = make_float4(length(p) - 0.3, 0, 0, 0);
+    float4 m0 = make_float4(length(p) - 2, 0, 0, 0);
 
-    /*if (current_prd.scene_id == 0)
+    if (scene_id == 1)
     {
-
+        m0 = make_float4(sdBox(p, make_float3(2, 2, 2)) - 0.3, 1, 0, 0);
     }
-    else if (current_prd.scene_id == 1)
-    {
-        m0 = make_float4(length(p) - 0.5, 1, 0, 0);
-    }*/
 
     return m0;
 }
@@ -395,7 +391,8 @@ RT_PROGRAM void intersect(int primIdx)
         }
     }
 
-    if (t < ray.tmax && rtPotentialIntersection(t))
+    // if (t < ray.tmax && rtPotentialIntersection(t))
+    if (abs(d) < eps && rtPotentialIntersection(t))
     {
         shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon, current_prd.scene_id);
         texcoord = make_float3(p.x, p.y, 0);
@@ -452,7 +449,8 @@ RT_PROGRAM void intersect_AutoRelaxation(int primIdx)
     float retT = t + r;
     //retT = min(retT, ray.tmax);
 
-    if (retT < ray.tmax && rtPotentialIntersection(retT))
+    // if (retT < ray.tmax && rtPotentialIntersection(retT))
+    if (r <= eps && rtPotentialIntersection(retT))
     {
         float3 p = ray.origin + retT * ray.direction;
         shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon, current_prd.scene_id);

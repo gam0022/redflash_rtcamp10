@@ -81,7 +81,7 @@ double animate_begin_time;
 double animate_time = 0.0f;
 
 // sampling
-int max_depth = 3;
+int max_depth = 2;
 int rr_begin_depth = 1;// ロシアンルーレット開始のdepth（未使用）
 int sample_per_launch = 1;
 int frame_number = 1;
@@ -452,7 +452,7 @@ void createContext()
     context->setMaxTraceDepth(2);
 
     context["scene_epsilon"]->setFloat(0.0004f);
-    context["raymarching_iteration"]->setUint(300);
+    context["raymarching_iteration"]->setUint(50);
     context["useLight"]->setUint(useLight ? 1 : 0);
     // context["rr_begin_depth"]->setUint( rr_begin_depth );
     context["max_depth"]->setUint(max_depth);
@@ -510,7 +510,7 @@ void createContext()
     // Raymarching programs
     ptx = sutil::getPtxString(SAMPLE_NAME, "intersect_raymarching.cu");
     pgram_bounding_box_raymarching = context->createProgramFromPTXString(ptx, "bounds");
-    pgram_intersection_raymarching = context->createProgramFromPTXString(ptx, "intersect_AutoRelaxation");
+    pgram_intersection_raymarching = context->createProgramFromPTXString(ptx, "intersect");
 
     // Material Custom Program
     setupMaterialAnimationProgram(ptx);
@@ -689,7 +689,7 @@ GeometryGroup createGeometry()
     // Raymarcing
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f),
-        make_float3(12.0f)));
+        make_float3(120.0f)));
     mat.albedo = make_float3(0.6f);
     mat.metallic = 0.8f;
     mat.roughness = 0.05f;
