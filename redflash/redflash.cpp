@@ -81,7 +81,7 @@ double animate_begin_time;
 double animate_time = 0.0f;
 
 // sampling
-int max_depth = 2;
+int max_depth = 3;
 int rr_begin_depth = 1;// ロシアンルーレット開始のdepth（未使用）
 int sample_per_launch = 1;
 int frame_number = 1;
@@ -828,10 +828,10 @@ void setupScene()
 
     // Envmap
     const float3 default_color = make_float3(1.0f, 1.0f, 1.0f);
-    const std::string texpath0 = resolveDataPath("polyhaven/neon_photostudio_4k.hdr");
+    const std::string texpath0 = resolveDataPath("polyhaven/fireplace_4k.hdr");
     context["envmap0"]->setTextureSampler(sutil::loadTexture(context, texpath0, default_color));
 
-    const std::string texpath1 = resolveDataPath("polyhaven/kloppenheim_06_puresky_4k.hdr");
+    const std::string texpath1 = resolveDataPath("polyhaven/table_mountain_1_puresky_4k.hdr");
     context["envmap1"]->setTextureSampler(sutil::loadTexture(context, texpath1, default_color));
 
     // Material Parameters
@@ -898,7 +898,7 @@ void updateFrame(float time)
         camera_up = make_float3(0.0f, 1.0f, 0.0f);
         camera_fov = 60.0f;
 
-        camera_eye = make_float3(20.0f * sin(time * TAU / 5), 5.0f + 2.0 * sin(time * TAU / 5.0f), 20.0f * cos(time * TAU / 5)) * 0.4 + eye_shake;
+        camera_eye = make_float3(20.0f * sin(time * TAU / 10), 5.0f + 2.0 * sin(time * TAU / 5.0f), 20.0f * cos(time * TAU / 10)) * 0.4 + eye_shake;
         camera_lookat = make_float3(0.0f, 2.0f, 0.0f) + target_shake;
 
         /*

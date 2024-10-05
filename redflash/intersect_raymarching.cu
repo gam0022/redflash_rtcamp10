@@ -277,7 +277,7 @@ float4 map_id(float3 pos, int scene_id)
     p.z = opRep(p.z, a);
 
     float4 m0 = make_float4(length(p) - 2, 0, 0, 0);
-    float4 m1 = make_float4(pos.y, 0, 0, 0);
+    float4 m1 = make_float4(pos.y, 2, 0, 0);
     opUnion(m0, m1);
 
     if (scene_id == 1)
@@ -349,14 +349,9 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
     }
     else if (id == 2)
     {
-        mat.albedo = make_float3(0.2, 0.2, 0.9);
-        mat.roughness = 0.005;
-        mat.metallic = 0.5;
-        float edge = calcEdge(p, 0.02, scene_id);
-        float a = (mod(time, 4) < 2.0) ? saturate(sin((m.w * 2 - time * 2) * TAU)) : 0;
-        mat.emission += edge * make_float3(0.2, 0.2, 20) * a;
-        mat.clearcoat = 0.9;
-        mat.subsurface = 0.9;
+        mat.albedo = make_float3(1.0, 1.0, 1.0);
+        mat.roughness = 0.6;
+        mat.metallic = 0.2;
     }
     else if (id == 3)
     {
