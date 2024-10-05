@@ -674,6 +674,21 @@ GeometryGroup createGeometryTriangles()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
+    // Mesh Floor
+    /*
+    mesh_file = resolveDataPath("mesh/floor.obj");
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(3.0f)));
+    mat.bsdf = DISNEY;
+    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
+    // mat.emission = make_float3(0.2f, 0.05f, 0.05f);
+    mat.metallic = 0.9f;
+    mat.roughness = 0.05f;
+    //mat.clearcoat = 0.0f;
+    //mat.clearcoatGloss = 0.0f;
+    //mat.specularTint = 0.0;
+    registerMaterial(gis.back(), mat);
+    */
+
     GeometryGroup shadow_group = context->createGeometryGroup(gis.begin(), gis.end());
     shadow_group->setAcceleration(context->createAcceleration("Trbvh"));
     return shadow_group;
@@ -867,7 +882,7 @@ void setupCamera()
 void updateFrame(float time)
 {
     // NOTE: falseにすれば自由カメラになる
-    bool update_camera = !true;
+    bool update_camera = true;
     // float t = time;
     float vignetteIntensity = 0.9;
 
@@ -881,10 +896,10 @@ void updateFrame(float time)
     if (update_camera)
     {
         camera_up = make_float3(0.0f, 1.0f, 0.0f);
-        camera_fov = lerp(70.0f, 68.0f, 0.5 + 0.5 * cos(TAU * time / 5));
+        camera_fov = 60.0f;
 
-        camera_eye = make_float3(3.5f, 0.5f, 8.0f) * 0.4 + eye_shake;
-        camera_lookat = make_float3(0.0f, 0.0f, 0.0f) + target_shake;
+        camera_eye = make_float3(20.0f * sin(time * TAU / 5), 5.0f + 2.0 * sin(time * TAU / 5.0f), 20.0f * cos(time * TAU / 5)) * 0.4 + eye_shake;
+        camera_lookat = make_float3(0.0f, 2.0f, 0.0f) + target_shake;
 
         /*
         if (time < 2)

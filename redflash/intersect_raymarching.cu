@@ -277,6 +277,8 @@ float4 map_id(float3 pos, int scene_id)
     p.z = opRep(p.z, a);
 
     float4 m0 = make_float4(length(p) - 2, 0, 0, 0);
+    float4 m1 = make_float4(pos.y, 0, 0, 0);
+    opUnion(m0, m1);
 
     if (scene_id == 1)
     {
