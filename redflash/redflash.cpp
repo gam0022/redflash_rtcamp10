@@ -451,8 +451,8 @@ void createContext()
     context->setStackSize(1800);
     context->setMaxTraceDepth(2);
 
-    context["scene_epsilon"]->setFloat(0.0004f);
-    context["raymarching_iteration"]->setUint(50);
+    context["scene_epsilon"]->setFloat(0.004f);
+    context["raymarching_iteration"]->setUint(100);
     context["useLight"]->setUint(useLight ? 1 : 0);
     // context["rr_begin_depth"]->setUint( rr_begin_depth );
     context["max_depth"]->setUint(max_depth);
@@ -704,7 +704,7 @@ GeometryGroup createGeometry()
     // Raymarcing
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f),
-        make_float3(120.0f)));
+        make_float3(200.0f, 40.0f, 200.0f)));
     mat.albedo = make_float3(0.6f);
     mat.metallic = 0.8f;
     mat.roughness = 0.05f;
@@ -896,9 +896,9 @@ void updateFrame(float time)
     if (update_camera)
     {
         camera_up = make_float3(0.0f, 1.0f, 0.0f);
-        camera_fov = 60.0f;
+        camera_fov = 90.0f;
 
-        camera_eye = make_float3(20.0f * sin(time * TAU / 10), 5.0f + 2.0 * sin(time * TAU / 5.0f), 20.0f * cos(time * TAU / 10)) * 0.4 + eye_shake;
+        camera_eye = make_float3(20.0f * sin(time * TAU / 10), 8.0f + 2.0 * sin(time * TAU / 5.0f), 20.0f * cos(time * TAU / 10)) * 0.4 + eye_shake;
         camera_lookat = make_float3(0.0f, 2.0f, 0.0f) + target_shake;
 
         /*

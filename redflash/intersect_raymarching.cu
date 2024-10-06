@@ -145,6 +145,14 @@ float opRep(float p, float interval)
     return mod(p, interval) - interval * 0.5;
 }
 
+float3 opRep(float3 p, float3 interval)
+{
+    p.x = opRep(p.x, interval.x);
+    p.y = opRep(p.y, interval.y);
+    p.z = opRep(p.z, interval.z);
+    return p;
+}
+
 void opUnion(float4& m1, float4& m2)
 {
     if (m2.x < m1.x) m1 = m2;
@@ -267,22 +275,63 @@ float4 map_id_rtcamp9(float3 pos, int scene_id)
     return m0;
 }
 
+#define M_Floor 0
+#define M_IFS_Base 1
+#define M_IFS_Emissive 2
+#define M_S2_Box 3
+
+#define phase(x) (floor(x) + .5 + .5 * cos(TAU * .5 * exp(-5. * mod(x, 1))))
+
 float4 map_id(float3 pos, int scene_id)
 {
-    float3 p = pos;
+    float4 m0 = make_float4(10, 0, 0, 0);
 
-    float a = 10;
-    p.x = opRep(p.x, a);
-    p.y = opRep(p.y, a);
-    p.z = opRep(p.z, a);
+    float beatPhase = phase(time);
 
-    float4 m0 = make_float4(length(p) - 2, 0, 0, 0);
-    float4 m1 = make_float4(pos.y, 2, 0, 0);
-    opUnion(m0, m1);
-
-    if (scene_id == 1)
+    if (scene_id == 0)
     {
-        m0 = make_float4(sdBox(p, make_float3(2, 2, 2)) - 0.3, 1, 0, 0);
+        // Floor
+        float4 m_floor = make_float4(pos.y, M_Floor, 0, 0);
+        opUnion(m0, m_floor);
+
+        int _IFS_Iteration = 3;
+        float3 _IFS_Rot = make_float3(0.8, 0.6, 0.7);
+        float3 _IFS_Offset = make_float3(0.89, 2.21, 0.53);
+        float3 _opRep = make_float3(24, 10, 24);
+
+        float3 p1 = opRep(pos, _opRep);
+        p1 -= _IFS_Offset;
+
+        for (int i = 0; i < _IFS_Iteration; i++)
+        {
+            p1 = abs_float3(p1 + _IFS_Offset) - _IFS_Offset;
+
+            float2 p1_xz = make_float2(p1.x, p1.z);
+            rot(p1_xz, TAU * _IFS_Rot.x);
+            p1.x = p1_xz.x;
+            p1.z = p1_xz.y;
+
+            float2 p1_zy = make_float2(p1.z, p1.y);
+            rot(p1_zy, TAU * _IFS_Rot.y);
+            p1.z = p1_zy.x;
+            p1.y = p1_zy.y;
+
+            float2 p1_xy = make_float2(p1.x, p1.y);
+            rot(p1_xy, TAU * _IFS_Rot.z + beatPhase / 2.3);
+            p1.x = p1_xy.x;
+            p1.y = p1_xy.y;
+        }
+
+        float4 m_base = make_float4(dBox(p1, make_float3(1, 0.5, 0.5)), M_IFS_Base, 0, 0);
+        float4 m_emissive = make_float4(dBox(p1, make_float3(1.1, 0.6, 0.1)), M_IFS_Emissive, 0, 0);
+
+        opUnion(m0, m_base);
+        opUnion(m0, m_emissive);
+    }
+    else if (scene_id == 1)
+    {
+        float3 p = opRep(pos, make_float3(20, 20, 20));
+        m0 = make_float4(dBox(p, make_float3(2, 2, 2)) - 0.3, M_S2_Box, 0, 0);
     }
 
     return m0;
@@ -338,30 +387,32 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
     float4 m = map_id(p, scene_id);
     uint id = uint(m.y);
 
-    if (id == 0)
+    if (id == M_Floor)
     {
-        mat.albedo = make_float3(0.8, 0.8, 0.8);
+        mat.albedo = make_float3(1.0, 1.0, 1.0);
+        mat.roughness = 0.15;
+        mat.metallic = 0.9;
+    }
+    else if (id == M_IFS_Base)
+    {
+        mat.albedo = make_float3(0.2, 0.2, 0.2);
         mat.roughness = 0.05;
+        mat.metallic = 0.8;
     }
-    else if (id == 1)
-    {
-        mat.albedo = make_float3(0.9, 0.02, 0.02);
-    }
-    else if (id == 2)
+    else if (id == M_IFS_Emissive)
     {
         mat.albedo = make_float3(1.0, 1.0, 1.0);
         mat.roughness = 0.6;
         mat.metallic = 0.2;
+
+        float a = saturate(cos((-p.z / 256 + time) * TAU));
+        mat.emission += make_float3(0.2, 0.2, 4) * a;
     }
-    else if (id == 3)
+    else if (id == M_S2_Box)
     {
-        bool flag = (mod(time, 4) > 2);
-        if (time < 5) flag = !flag;
-        float a = flag ? saturate(sin((m.w * 2 - time * 2) * TAU)) : saturate(sin(TAU * time * 10));
-        mat.emission += make_float3(0.2, 0.2, 20) * a;
-        mat.roughness = 0.001;
-        mat.metallic = 0.1;
-        mat.albedo = make_float3(0.01, 0.01, 0.05);
+        mat.albedo = make_float3(1.0, 0.2, 0.2);
+        mat.roughness = 0.05;
+        mat.metallic = 0.8;
     }
 }
 
