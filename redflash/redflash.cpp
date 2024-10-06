@@ -677,7 +677,7 @@ GeometryGroup createGeometryTriangles()
 
     // Mesh door_base
     mesh_file = resolveDataPath("mesh/door_base.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.25f));
+    gis.push_back(createMesh(mesh_file, make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f));
     mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.05f;
