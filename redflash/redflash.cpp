@@ -675,20 +675,14 @@ GeometryGroup createGeometryTriangles()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
-    // Mesh Floor
-    /*
-    mesh_file = resolveDataPath("mesh/floor.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(3.0f)));
+    // Mesh door_base
+    mesh_file = resolveDataPath("mesh/door_base.obj");
+    gis.push_back(createMesh(mesh_file, make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.25f));
     mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
-    // mat.emission = make_float3(0.2f, 0.05f, 0.05f);
-    mat.metallic = 0.9f;
-    mat.roughness = 0.05f;
-    //mat.clearcoat = 0.0f;
-    //mat.clearcoatGloss = 0.0f;
-    //mat.specularTint = 0.0;
+    mat.metallic = 0.05f;
+    mat.roughness = 0.95f;
     registerMaterial(gis.back(), mat);
-    */
 
     GeometryGroup shadow_group = context->createGeometryGroup(gis.begin(), gis.end());
     shadow_group->setAcceleration(context->createAcceleration("Trbvh"));

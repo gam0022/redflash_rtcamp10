@@ -95,12 +95,12 @@ __device__ inline float vignette(float2 uv) {
     return powf(saturate(1.0 - dot(d, d)), vignetteSmoothness);
 }
 
-__device__ inline float3 posteffect(float3 col, float2 uv, float distance)
+__device__ inline float3 posteffect(float3 col, float2 uv, float distance, int scene_id)
 {
     // vignette
     col *= vignette(uv);
 
-    if (scene_id_init == 0)
+    if (scene_id == 0)
     {
         col = lerp(col, make_float3(0), 1 - exp(-0.02 * distance));
     }
@@ -121,6 +121,7 @@ RT_PROGRAM void pathtrace_camera()
     float3 albedo = make_float3(0.0f);
     float3 normal = make_float3(0.0f);
     float distance = 0.0f;
+    int scene_id;
     unsigned int seed = tea<16>(screen.x * launch_index.y + launch_index.x, total_sample);
 
     if (frame_number > 1)
@@ -155,6 +156,7 @@ RT_PROGRAM void pathtrace_camera()
 
             if (prd.done || prd.depth >= max_depth)
             {
+                scene_id = prd.scene_id;
                 break;
             }
 
@@ -212,7 +214,7 @@ RT_PROGRAM void pathtrace_camera()
 
     // posteffect
     float2 uv = make_float2(launch_index) / make_float2(screen);
-    pixel_output = posteffect(pixel_output, uv, distance);
+    pixel_output = posteffect(pixel_output, uv, distance, scene_id);
 
     // Save to buffer
     liner_buffer[launch_index] = make_float4(pixel_liner, 1.0);
