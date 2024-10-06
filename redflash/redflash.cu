@@ -13,6 +13,7 @@ static __host__ __device__ __inline__ float powerHeuristic(float a, float b)
 }
 
 // Scene wide variables
+rtDeclareVariable(uint, scene_id_init, , );
 rtDeclareVariable(float, scene_epsilon, , );
 rtDeclareVariable(uint, useLight, , );
 rtDeclareVariable(rtObject, top_object, , );
@@ -94,10 +95,15 @@ __device__ inline float vignette(float2 uv) {
     return powf(saturate(1.0 - dot(d, d)), vignetteSmoothness);
 }
 
-__device__ inline float3 posteffect(float3 col, float2 uv)
+__device__ inline float3 posteffect(float3 col, float2 uv, float distance)
 {
     // vignette
     col *= vignette(uv);
+
+    if (scene_id_init == 0)
+    {
+        col = lerp(col, make_float3(0), 1 - exp(-0.02 * distance));
+    }
 
     // fade in
     // col = lerp(col, make_float3(0), smoothstep(0.3, 0, time));
@@ -137,7 +143,7 @@ RT_PROGRAM void pathtrace_camera()
         prd.seed = seed;
         prd.depth = 0;
         prd.distance = distance;
-        prd.scene_id = 0;
+        prd.scene_id = scene_id_init;
 
         // Each iteration is a segment of the ray path.  The closest hit will
         // return new segments to be traced here.
@@ -206,7 +212,7 @@ RT_PROGRAM void pathtrace_camera()
 
     // posteffect
     float2 uv = make_float2(launch_index) / make_float2(screen);
-    pixel_output = posteffect(pixel_output, uv);
+    pixel_output = posteffect(pixel_output, uv, distance);
 
     // Save to buffer
     liner_buffer[launch_index] = make_float4(pixel_liner, 1.0);
@@ -241,7 +247,7 @@ RT_PROGRAM void debug_camera()
     prd.seed = 0;
     prd.depth = 0;
     prd.distance = 0;
-    prd.scene_id = 0;
+    prd.scene_id = scene_id_init;
 
     Ray ray = make_Ray(ray_origin, ray_direction, RADIANCE_RAY_TYPE, scene_epsilon, RT_DEFAULT_MAX);
     prd.wo = -ray.direction;
@@ -473,7 +479,7 @@ RT_PROGRAM void envmap_miss()
 
     if (current_prd.scene_id == 0)
     {
-        current_prd.radiance += make_float3(tex2D(envmap0, u, v)) * current_prd.attenuation * 0.4;
+        current_prd.radiance += make_float3(tex2D(envmap0, u, v)) * current_prd.attenuation * 0.0;
     }
     else if (current_prd.scene_id == 1)
     {

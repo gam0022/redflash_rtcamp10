@@ -451,6 +451,7 @@ void createContext()
     context->setStackSize(1800);
     context->setMaxTraceDepth(2);
 
+    context["scene_id_init"]->setUint(0);
     context["scene_epsilon"]->setFloat(0.004f);
     context["raymarching_iteration"]->setUint(100);
     context["useLight"]->setUint(useLight ? 1 : 0);
@@ -847,30 +848,6 @@ void setupCamera()
     camera_fov = 35;
     camera_up = make_float3(0.0f, 1.0f, 0.0f);
 
-    // 少し遠景
-    //camera_eye = make_float3(13.91f, 166.787f, 413.00f);
-    //camera_lookat = make_float3(-6.59f, 169.94f, -9.11f);
-
-    // 近づいたカット
-    //camera_eye = make_float3(1.65f, 196.01f, 287.97f);
-    //camera_lookat = make_float3(-7.06f, 76.34f, 26.96f);
-
-    // Lucyを中心にしたカット
-    //camera_eye = make_float3(0.73f, 160.33f, 220.03f);
-    //camera_lookat = make_float3(0.37f, 149.31f, 201.70f);
-
-    // Lucyを中心にしたカット2（レイトレ合宿7提出版）
-    //camera_eye = make_float3(9.55f, 144.84f, 214.05f);
-    //camera_lookat = make_float3(1.60f, 149.38f, 200.70f);
-
-    // Lucyを中心にしたカット3
-    //camera_eye = make_float3(9.08f, 150.98f, 210.78f);
-    //camera_lookat = make_float3(1.41f, 150.12f, 200.42f);
-
-    // Mandelbox全体
-    //camera_eye = make_float3(-815.63f, -527.19f, -674.00f);
-    //camera_lookat = make_float3(-7.06f, 76.34f, 26.96f);
-
     // 中心
     camera_eye = make_float3(0, 3.0f, 10.0f);
     camera_lookat = make_float3(0, 3.0f, 0.0f);
@@ -886,12 +863,10 @@ void updateFrame(float time)
     // float t = time;
     float vignetteIntensity = 0.9;
 
-    // 中距離
-    // light_parameters[0].position = make_float3(0.0f, 0.0f, 0.0f);
-    // light_parameters[1].position = make_float3(0.0f, 100.f, 0.0f);
-
     float3 eye_shake = 0.05f * sinFbm3((time - 1) / 10.0);
     float3 target_shake = -0.1f * sinFbm3(time / 10.0);
+
+    uint scene_id_init = 0;
 
     if (update_camera)
     {
@@ -962,11 +937,21 @@ void updateFrame(float time)
             vignetteIntensity = 1.3;
         }
         */
+
+        if (time < 5)
+        {
+
+        }
+        else if (time < 10)
+        {
+            scene_id_init = 1;
+        }
     }
 
     if (useLight) updateGeometryLight(time);
 
     camera_changed = true;
+    context["scene_id_init"]->setUint(scene_id_init);
     context["time"]->setFloat(time);
     context["vignetteIntensity"]->setFloat(vignetteIntensity);
 }
