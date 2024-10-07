@@ -106,8 +106,8 @@ void destroyContext();
 void registerExitHandler();
 void createContext();
 void createMaterials();
-GeometryGroup createGeometry();
-GeometryGroup createGeometryTriangles();
+GeometryGroup createRaymarchingGeometry();
+GeometryGroup createStaticGeometry();
 void setupScene();
 void setupCamera();
 void setupLights();
@@ -346,7 +346,7 @@ void createMaterials()
 }
 
 
-GeometryGroup createGeometryTriangles()
+GeometryGroup createStaticGeometry()
 {
     // Create a tetrahedron using four triangular faces.  First We will create
     // vertex and index buffers for the faces, and then create a
@@ -407,7 +407,7 @@ GeometryGroup createGeometryTriangles()
 }
 
 
-GeometryGroup createGeometry()
+GeometryGroup createRaymarchingGeometry()
 {
     // Sphere geometry
     Geometry sphere = context->createGeometry();
@@ -459,8 +459,8 @@ void setupScene()
 {
     // Create a GeometryGroup for the GeometryTriangles instances and a separate
     // GeometryGroup for all other primitives.
-    GeometryGroup tri_gg = createGeometryTriangles();
-    GeometryGroup gg     = createGeometry();
+    GeometryGroup tri_gg = createStaticGeometry();
+    GeometryGroup gg     = createRaymarchingGeometry();
 
     // Create a top-level Group to contain the two GeometryGroups.
     Group top_group = context->createGroup();

@@ -687,7 +687,7 @@ void updateLightParameters(const std::vector<LightParameter>& lightParameters)
     m_bufferLightParameters->unmap();
 }
 
-GeometryGroup createGeometryTriangles()
+GeometryGroup createStaticGeometry()
 {
     MaterialParameter mat;
     std::vector<GeometryInstance> gis;
@@ -706,7 +706,7 @@ GeometryGroup createGeometryTriangles()
     return gg;
 }
 
-Group createDynamiceGeometry()
+Group createDynamicGeometry()
 {
     MaterialParameter mat;
 
@@ -728,11 +728,10 @@ Group createDynamiceGeometry()
     return group;
 }
 
-GeometryGroup createGeometry()
+GeometryGroup createRaymarchingGeometry()
 {
     MaterialParameter mat;
 
-    // create geometry instances
     std::vector<GeometryInstance> gis;
 
     // Raymarcing
@@ -843,15 +842,15 @@ void updateGeometryLight(float time)
 
 void setupScene()
 {
-    GeometryGroup tri_gg = createGeometryTriangles();
-    GeometryGroup gg = createGeometry();
-    dynamic_group = createDynamiceGeometry();
+    GeometryGroup static_gg = createStaticGeometry();
+    GeometryGroup raymarching_gg = createRaymarchingGeometry();
+    dynamic_group = createDynamicGeometry();
     light_group = createGeometryLight();
 
     top_group_light = context->createGroup();
     top_group_light->setAcceleration(context->createAcceleration("Trbvh"));
-    top_group_light->addChild(gg);
-    top_group_light->addChild(tri_gg);
+    top_group_light->addChild(raymarching_gg);
+    top_group_light->addChild(static_gg);
     top_group_light->addChild(dynamic_group);
     top_group_light->addChild(light_group);
     context["top_object"]->set(top_group_light);
