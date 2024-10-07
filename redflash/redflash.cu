@@ -16,7 +16,8 @@ static __host__ __device__ __inline__ float powerHeuristic(float a, float b)
 rtDeclareVariable(uint, scene_id_init, , );
 rtDeclareVariable(float, scene_epsilon, , );
 rtDeclareVariable(uint, useLight, , );
-rtDeclareVariable(rtObject, top_object, , );
+rtDeclareVariable(rtObject, top_object_scene0, , );
+rtDeclareVariable(rtObject, top_object_scene1, , );
 rtDeclareVariable(uint2, launch_index, rtLaunchIndex, );
 rtDeclareVariable(PerRayData_pathtrace, current_prd, rtPayload, );
 rtDeclareVariable(float, time, , );
@@ -153,7 +154,16 @@ RT_PROGRAM void pathtrace_camera()
         {
             Ray ray = make_Ray(ray_origin, ray_direction, RADIANCE_RAY_TYPE, scene_epsilon, RT_DEFAULT_MAX);
             prd.wo = -ray.direction;
-            rtTrace(top_object, ray, prd);
+
+
+            if (prd.scene_id == 0)
+            {
+                rtTrace(top_object_scene0, ray, prd);
+            }
+            else if (prd.scene_id == 1)
+            {
+                rtTrace(top_object_scene1, ray, prd);
+            }
 
             if (prd.done || prd.depth >= max_depth)
             {
@@ -254,7 +264,16 @@ RT_PROGRAM void debug_camera()
 
     Ray ray = make_Ray(ray_origin, ray_direction, RADIANCE_RAY_TYPE, scene_epsilon, RT_DEFAULT_MAX);
     prd.wo = -ray.direction;
-    rtTrace(top_object, ray, prd);
+
+
+    if (prd.scene_id == 0)
+    {
+        rtTrace(top_object_scene0, ray, prd);
+    }
+    else if (prd.scene_id == 1)
+    {
+        rtTrace(top_object_scene1, ray, prd);
+    }
 
     result = (0.5 * saturate(dot(prd.normal, light_dir)) + 0.5) * prd.albedo + prd.radiance;
 
@@ -359,7 +378,15 @@ RT_FUNCTION float3 DirectLight(MaterialParameter& mat, State& state)
     PerRayData_pathtrace_shadow prd_shadow;
     prd_shadow.inShadow = false;
     optix::Ray shadowRay = optix::make_Ray(surfacePos, lightDir, 1, scene_epsilon, lightDist - scene_epsilon);
-    rtTrace(top_object, shadowRay, prd_shadow);
+
+    if (current_prd.scene_id == 0)
+    {
+        rtTrace(top_object_scene0, shadowRay, prd_shadow);
+    }
+    else if (current_prd.scene_id == 1)
+    {
+        rtTrace(top_object_scene1, shadowRay, prd_shadow);
+    }
 
     if (prd_shadow.inShadow)
         return make_float3(0.0f);

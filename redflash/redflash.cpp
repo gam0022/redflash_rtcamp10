@@ -176,17 +176,18 @@ int2           mouse_prev_pos;
 int            mouse_button;
 
 // Scene
+Group top_object_scene0;
+Group top_object_scene1;
 
 // Lightを動的にアップデートするための参照
 std::vector<LightParameter> light_parameters;
 std::vector<GeometryInstance> light_gis;
 GeometryGroup light_group;
-Group top_group_light;
 
 // 動的にシーンをアップデートするための参照
-Group dynamic_group;
-std::vector<Transform> dynamic_transforms;
-std::vector<GeometryInstance > dynamic_gis;
+Group dynamic_common_group;
+std::vector<Transform> dynamic_common_transforms;
+std::vector<GeometryInstance > dynamic_common_gis;
 
 // WASD移動
 bool is_key_W_pressed = false;
@@ -443,8 +444,8 @@ Transform createDynamicMesh(
     transform->setMatrix(false, mat.getData(), 0);
     transform->setChild(geometry_group);
 
-    dynamic_gis.push_back(mesh.geom_instance);
-    dynamic_transforms.push_back(transform);
+    dynamic_common_gis.push_back(mesh.geom_instance);
+    dynamic_common_transforms.push_back(transform);
 
     return transform;
 }
@@ -687,7 +688,7 @@ void updateLightParameters(const std::vector<LightParameter>& lightParameters)
     m_bufferLightParameters->unmap();
 }
 
-GeometryGroup createStaticGeometry()
+GeometryGroup createStaticGeometryCommon()
 {
     MaterialParameter mat;
     std::vector<GeometryInstance> gis;
@@ -701,8 +702,18 @@ GeometryGroup createStaticGeometry()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
+    GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
+    gg->setAcceleration(context->createAcceleration("Trbvh"));
+    return gg;
+}
+
+GeometryGroup createStaticGeometryScene0()
+{
+    MaterialParameter mat;
+    std::vector<GeometryInstance> gis;
+
     // Mesh Room
-    mesh_file = resolveDataPath("mesh/room.obj");
+    std::string mesh_file = resolveDataPath("mesh/room.obj");
     gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(3.0f)));
     mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
@@ -715,7 +726,7 @@ GeometryGroup createStaticGeometry()
     return gg;
 }
 
-Group createDynamicGeometry()
+Group createDynamicGeometryCommon()
 {
     MaterialParameter mat;
 
@@ -726,7 +737,7 @@ Group createDynamicGeometry()
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.05f;
     mat.roughness = 0.95f;
-    registerMaterial(dynamic_gis.back(), mat);
+    registerMaterial(dynamic_common_gis.back(), mat);
 
     Group group = context->createGroup();
     group->setAcceleration(context->createAcceleration("Trbvh"));
@@ -843,26 +854,34 @@ void updateGeometryLight(float time)
 
     light_group->getAcceleration()->markDirty();
     light_group->getContext()->launch(0, 0, 0);
-
-    // NOTE: 不要な気がする
-    // top_group_light->getAcceleration()->markDirty();
-    // top_group_light->getContext()->launch(0, 0, 0);
 }
 
 void setupScene()
 {
-    GeometryGroup static_gg = createStaticGeometry();
+    GeometryGroup static_common_gg = createStaticGeometryCommon();
     GeometryGroup raymarching_gg = createRaymarchingGeometry();
-    dynamic_group = createDynamicGeometry();
+    dynamic_common_group = createDynamicGeometryCommon();
     light_group = createGeometryLight();
 
-    top_group_light = context->createGroup();
-    top_group_light->setAcceleration(context->createAcceleration("Trbvh"));
-    top_group_light->addChild(raymarching_gg);
-    top_group_light->addChild(static_gg);
-    top_group_light->addChild(dynamic_group);
-    top_group_light->addChild(light_group);
-    context["top_object"]->set(top_group_light);
+    // Scene0
+    GeometryGroup static_scene0_gg = createStaticGeometryScene0();
+    top_object_scene0 = context->createGroup();
+    top_object_scene0->setAcceleration(context->createAcceleration("Trbvh"));
+    top_object_scene0->addChild(raymarching_gg);
+    top_object_scene0->addChild(static_common_gg);
+    top_object_scene0->addChild(static_scene0_gg);
+    top_object_scene0->addChild(dynamic_common_group);
+    top_object_scene0->addChild(light_group);
+    context["top_object_scene0"]->set(top_object_scene0);
+
+    // Scene1
+    top_object_scene1 = context->createGroup();
+    top_object_scene1->setAcceleration(context->createAcceleration("Trbvh"));
+    top_object_scene1->addChild(raymarching_gg);
+    top_object_scene1->addChild(static_common_gg);
+    top_object_scene1->addChild(dynamic_common_group);
+    top_object_scene1->addChild(light_group);
+    context["top_object_scene1"]->set(top_object_scene1);
 
     // Envmap
     const float3 default_color = make_float3(1.0f, 1.0f, 1.0f);
@@ -989,14 +1008,24 @@ void updateFrame(float time)
 
     if (update_dynamic)
     {
-        Matrix4x4 mat = createMatrix(make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * time / -5.0f);
-        dynamic_transforms[0]->setMatrix(false, mat.getData(), false);
+        float rad = TAU * clamp(time, 0.0f, 2.0f) / -5.0f;
+        Matrix4x4 mat = createMatrix(make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
+        dynamic_common_transforms[0]->setMatrix(false, mat.getData(), false);
 
-        dynamic_group->getAcceleration()->markDirty();
-        dynamic_group->getContext()->launch(0, 0, 0);
+        dynamic_common_group->getAcceleration()->markDirty();
+        dynamic_common_group->getContext()->launch(0, 0, 0);
     }
 
     if (useLight) updateGeometryLight(time);
+
+    if (useLight || update_dynamic)
+    {
+        top_object_scene0->getAcceleration()->markDirty();
+        top_object_scene0->getContext()->launch(0, 0, 0);
+
+        top_object_scene1->getAcceleration()->markDirty();
+        top_object_scene1->getContext()->launch(0, 0, 0);
+    }
 
     camera_changed = true;
     context["scene_id_init"]->setUint(scene_id_init);
