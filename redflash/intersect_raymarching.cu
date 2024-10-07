@@ -284,15 +284,15 @@ float4 map_id_rtcamp9(float3 pos, int scene_id)
 
 float4 map_id(float3 pos, int scene_id)
 {
-    float4 m0 = make_float4(10, 0, 0, 0);
+    float4 m0 = make_float4(100, 0, 0, 0);
 
     float beatPhase = phase(time);
 
     if (scene_id == 0)
     {
         // Floor
-        float4 m_floor = make_float4(pos.y, M_Floor, 0, 0);
-        opUnion(m0, m_floor);
+        // float4 m_floor = make_float4(pos.y, M_Floor, 0, 0);
+        // opUnion(m0, m_floor);
 
         int _IFS_Iteration = 3;
         float3 _IFS_Rot = make_float3(0.8, 0.6, 0.7);

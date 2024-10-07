@@ -701,6 +701,15 @@ GeometryGroup createStaticGeometry()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
+    // Mesh Room
+    mesh_file = resolveDataPath("mesh/room.obj");
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(3.0f)));
+    mat.bsdf = DISNEY;
+    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
+    mat.metallic = 0.8f;
+    mat.roughness = 0.05f;
+    registerMaterial(gis.back(), mat);
+
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
     gg->setAcceleration(context->createAcceleration("Trbvh"));
     return gg;
@@ -736,8 +745,8 @@ GeometryGroup createRaymarchingGeometry()
 
     // Raymarcing
     gis.push_back(createRaymrachingObject(
-        make_float3(0.0f),
-        make_float3(200.0f, 40.0f, 200.0f)));
+        make_float3(0.0f, 0.0f, 0.0f),
+        make_float3(40.0f, 40.0f, 40.0f)));
     mat.albedo = make_float3(0.6f);
     mat.metallic = 0.8f;
     mat.roughness = 0.05f;

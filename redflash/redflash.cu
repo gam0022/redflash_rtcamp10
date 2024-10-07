@@ -102,7 +102,8 @@ __device__ inline float3 posteffect(float3 col, float2 uv, float distance, int s
 
     if (scene_id == 0)
     {
-        col = lerp(col, make_float3(0), 1 - exp(-0.02 * distance));
+        // distance fog
+        // col = lerp(col, make_float3(0), 1 - exp(-0.02 * distance));
     }
 
     // fade in
@@ -481,7 +482,7 @@ RT_PROGRAM void envmap_miss()
 
     if (current_prd.scene_id == 0)
     {
-        current_prd.radiance += make_float3(tex2D(envmap0, u, v)) * current_prd.attenuation * 0.0;
+        current_prd.radiance += make_float3(tex2D(envmap0, u, v)) * current_prd.attenuation * 1.0;
     }
     else if (current_prd.scene_id == 1)
     {
