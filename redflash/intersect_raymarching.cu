@@ -297,7 +297,7 @@ float4 map_id(float3 pos, int scene_id)
         int _IFS_Iteration = 3;
         float3 _IFS_Rot = make_float3(0.8, 0.6, 0.7);
         float3 _IFS_Offset = make_float3(0.89, 2.21, 0.53);
-        float3 _opRep = make_float3(24, 10, 24);
+        float3 _opRep = make_float3(20, 10, 20);
 
         float3 p1 = opRep(pos, _opRep);
         p1 -= _IFS_Offset;

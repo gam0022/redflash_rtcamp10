@@ -695,7 +695,7 @@ GeometryGroup createStaticGeometryCommon()
 
     // Mesh portal
     std::string mesh_file = resolveDataPath("mesh/portal.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(3.0f)));
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f), make_float3(3.0f)));
     mat.bsdf = PORTAL;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.8f;
@@ -732,7 +732,7 @@ Group createDynamicGeometryCommon()
 
     // Mesh door_base
     std::string mesh_file = resolveDataPath("mesh/door_base.obj");
-    Transform door_base = createDynamicMesh(mesh_file, make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
+    Transform door_base = createDynamicMesh(mesh_file, make_float3(-0.42f * 3.0f, 0.0f, -0.4f * 3.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
     mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.05f;
@@ -879,7 +879,7 @@ void setupScene()
     top_object_scene1->setAcceleration(context->createAcceleration("Trbvh"));
     top_object_scene1->addChild(raymarching_gg);
     top_object_scene1->addChild(static_common_gg);
-    top_object_scene1->addChild(dynamic_common_group);
+    // top_object_scene1->addChild(dynamic_common_group);
     top_object_scene1->addChild(light_group);
     context["top_object_scene1"]->set(top_object_scene1);
 
@@ -931,8 +931,19 @@ void updateFrame(float time)
         camera_up = make_float3(0.0f, 1.0f, 0.0f);
         camera_fov = 90.0f;
 
-        camera_eye = make_float3(20.0f * sin(time * TAU / 10), 8.0f + 2.0 * sin(time * TAU / 5.0f), 20.0f * cos(time * TAU / 10)) * 0.4 + eye_shake;
+        float a = 1.0f;
+
+        camera_eye = make_float3(20.0f * sin(time * TAU / 10 * a), 8.0f + 2.0 * sin(time * TAU / 5.0f * a), -20.0f * cos(time * TAU / 10 * a)) * 0.4 + eye_shake;
         camera_lookat = make_float3(0.0f, 2.0f, 0.0f) + target_shake;
+
+        if (time < 5)
+        {
+            camera_eye = make_float3(0, 8.0f + 2.0 * sin(time * TAU / 5.0f * a), -15.0f) * 0.4 + eye_shake;
+        }
+        else
+        {
+            camera_eye = make_float3(0, 8.0f + 2.0 * sin(time * TAU / 5.0f * a), 15.0f) * 0.4 + eye_shake;
+        }
 
         /*
         if (time < 2)
@@ -1008,8 +1019,9 @@ void updateFrame(float time)
 
     if (update_dynamic)
     {
-        float rad = TAU * clamp(time, 0.0f, 2.0f) / -5.0f;
-        Matrix4x4 mat = createMatrix(make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
+        float rad = TAU * clamp(time - 1, 0.0f, 2.0f) / 5.0f;
+        // rad = TAU * 2 / 5 * clamp(sin(time * TAU / 5), 0.0f, 1.0f);
+        Matrix4x4 mat = createMatrix(make_float3(-0.42f * 3.0f, 0.0f, 3.0f * -0.05f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
         dynamic_common_transforms[0]->setMatrix(false, mat.getData(), false);
 
         dynamic_common_group->getAcceleration()->markDirty();
