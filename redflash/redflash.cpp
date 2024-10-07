@@ -183,6 +183,11 @@ std::vector<GeometryInstance> light_gis;
 GeometryGroup light_group;
 Group top_group_light;
 
+// 動的にシーンをアップデートするための参照
+Group dynamic_group;
+std::vector<Transform> dynamic_transforms;
+std::vector<GeometryInstance > dynamic_gis;
+
 // WASD移動
 bool is_key_W_pressed = false;
 bool is_key_A_pressed = false;
@@ -371,6 +376,19 @@ GeometryInstance createSphereObject(const float3& center, const float radius)
     return gi;
 }
 
+Matrix4x4 createMatrix(
+    const float3& center,
+    const float3& scale,
+    const float3& axis = make_float3(0.0f, 1.0f, 0.0f),
+    const float radians = 0.0f
+)
+{
+    // NOTE: OptiXでは行優先っぽいので、右から順番に適用される
+    Matrix4x4 mat = Matrix4x4::translate(center) * Matrix4x4::rotate(radians, axis) * Matrix4x4::scale(scale);
+
+    return mat;
+}
+
 GeometryInstance createMesh(
     const std::string& filename,
     const float3& center,
@@ -389,11 +407,46 @@ GeometryInstance createMesh(
     mesh.closest_hit = common_closest_hit;
     mesh.any_hit = common_any_hit;
 
-    // NOTE: OptiXでは行優先っぽいので、右から順番に適用される
-    Matrix4x4 mat = Matrix4x4::translate(center) * Matrix4x4::rotate(radians, axis) * Matrix4x4::scale(scale);
+    Matrix4x4 mat = createMatrix(center, scale, axis, radians);
 
     loadMesh(filename, mesh, mat);
     return mesh.geom_instance;
+}
+
+Transform createDynamicMesh(
+    const std::string& filename,
+    const float3& center,
+    const float3& scale,
+    const float3& axis = make_float3(0.0f, 1.0f, 0.0f),
+    const float radians = 0.0f)
+{
+    OptiXMesh mesh;
+    mesh.context = context;
+    mesh.use_tri_api = true;
+    mesh.ignore_mats = false;
+
+    // NOTE: registerMaterial で上書きするので、この指定は意味がない
+    mesh.material = common_material;
+
+    mesh.closest_hit = common_closest_hit;
+    mesh.any_hit = common_any_hit;
+
+    loadMesh(filename, mesh);
+
+    GeometryGroup geometry_group = context->createGeometryGroup();
+    geometry_group->setAcceleration(context->createAcceleration("Trbvh"));
+    geometry_group->addChild(mesh.geom_instance);
+
+    Matrix4x4 mat = createMatrix(center, scale, axis, radians);
+
+    Transform transform = context->createTransform();
+    transform->setMatrix(false, mat.getData(), 0);
+    transform->setChild(geometry_group);
+
+    dynamic_gis.push_back(mesh.geom_instance);
+    dynamic_transforms.push_back(transform);
+
+    return transform;
 }
 
 void setupBSDF(std::vector<std::string>& bsdf_paths)
@@ -639,33 +692,6 @@ GeometryGroup createGeometryTriangles()
     MaterialParameter mat;
     std::vector<GeometryInstance> gis;
 
-    /*
-
-    // Mesh cow
-    std::string mesh_file = resolveDataPath("cow.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 300.0f, 0.0f), make_float3(500.0f)));
-    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
-    mat.metallic = 0.8f;
-    mat.roughness = 0.05f;
-    registerMaterial(gis.back(), mat);
-
-    // Mesh Lucy100k
-    mesh_file = resolveDataPath("metallic-lucy-statue-stanford-scan.obj");
-    gis.push_back(createMesh(mesh_file,
-        make_float3(0.0f, 144.5f, 198.0f),
-        make_float3(0.05f),
-        make_float3(0.0f, 1.0f, 0.0), M_PIf));
-    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
-    // mat.emission = make_float3(0.2f, 0.05f, 0.05f);
-    mat.metallic = 0.01f;
-    mat.roughness = 0.05f;
-    //mat.clearcoat = 0.0f;
-    //mat.clearcoatGloss = 0.0f;
-    //mat.specularTint = 0.0;
-    registerMaterial(gis.back(), mat);
-
-    */
-
     // Mesh portal
     std::string mesh_file = resolveDataPath("mesh/portal.obj");
     gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(3.0f)));
@@ -675,18 +701,31 @@ GeometryGroup createGeometryTriangles()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
+    GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
+    gg->setAcceleration(context->createAcceleration("Trbvh"));
+    return gg;
+}
+
+Group createDynamiceGeometry()
+{
+    MaterialParameter mat;
+
     // Mesh door_base
-    mesh_file = resolveDataPath("mesh/door_base.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f));
+    std::string mesh_file = resolveDataPath("mesh/door_base.obj");
+    Transform door_base = createDynamicMesh(mesh_file, make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
     mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.05f;
     mat.roughness = 0.95f;
-    registerMaterial(gis.back(), mat);
+    registerMaterial(dynamic_gis.back(), mat);
 
-    GeometryGroup shadow_group = context->createGeometryGroup(gis.begin(), gis.end());
-    shadow_group->setAcceleration(context->createAcceleration("Trbvh"));
-    return shadow_group;
+    Group group = context->createGroup();
+    group->setAcceleration(context->createAcceleration("Trbvh"));
+
+    // 階層構造の構築
+    group->addChild(door_base);
+
+    return group;
 }
 
 GeometryGroup createGeometry()
@@ -705,10 +744,9 @@ GeometryGroup createGeometry()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat, MaterialAnimationProgramType::Raymarching);
 
-    // Create shadow group (no light)
-    GeometryGroup shadow_group = context->createGeometryGroup(gis.begin(), gis.end());
-    shadow_group->setAcceleration(context->createAcceleration("Trbvh"));
-    return shadow_group;
+    GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
+    gg->setAcceleration(context->createAcceleration("Trbvh"));
+    return gg;
 }
 
 GeometryGroup createGeometryLight()
@@ -798,26 +836,23 @@ void updateGeometryLight(float time)
     light_group->getAcceleration()->markDirty();
     light_group->getContext()->launch(0, 0, 0);
 
-    top_group_light->getAcceleration()->markDirty();
-    top_group_light->getContext()->launch(0, 0, 0);
+    // NOTE: 不要な気がする
+    // top_group_light->getAcceleration()->markDirty();
+    // top_group_light->getContext()->launch(0, 0, 0);
 }
 
 void setupScene()
 {
     GeometryGroup tri_gg = createGeometryTriangles();
     GeometryGroup gg = createGeometry();
+    dynamic_group = createDynamiceGeometry();
     light_group = createGeometryLight();
-
-    Group top_group = context->createGroup();
-    top_group->setAcceleration(context->createAcceleration("Trbvh"));
-    top_group->addChild(gg);
-    top_group->addChild(tri_gg);
-    context["top_shadower"]->set(top_group);
 
     top_group_light = context->createGroup();
     top_group_light->setAcceleration(context->createAcceleration("Trbvh"));
     top_group_light->addChild(gg);
     top_group_light->addChild(tri_gg);
+    top_group_light->addChild(dynamic_group);
     top_group_light->addChild(light_group);
     context["top_object"]->set(top_group_light);
 
@@ -854,7 +889,9 @@ void updateFrame(float time)
 {
     // NOTE: falseにすれば自由カメラになる
     bool update_camera = true;
-    // float t = time;
+
+    bool update_dynamic = true;
+
     float vignetteIntensity = 0.9;
 
     float3 eye_shake = 0.05f * sinFbm3((time - 1) / 10.0);
@@ -940,6 +977,15 @@ void updateFrame(float time)
         {
             scene_id_init = 1;
         }
+    }
+
+    if (update_dynamic)
+    {
+        Matrix4x4 mat = createMatrix(make_float3(-0.42f * 3.0f, 0.0f, 0.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * time / -5.0f);
+        dynamic_transforms[0]->setMatrix(false, mat.getData(), false);
+
+        dynamic_group->getAcceleration()->markDirty();
+        dynamic_group->getContext()->launch(0, 0, 0);
     }
 
     if (useLight) updateGeometryLight(time);
