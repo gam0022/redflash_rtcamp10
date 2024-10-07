@@ -6,7 +6,7 @@ set dstDir=D:\Dropbox\RTCamp\gam0022_gpu_with_git\
 cp %srcDir%bin\Release\redflash.exe %dstDir%
 cp %srcDir%bin\Release\sutil_sdk.dll %dstDir%
 
-cp %srcDataDir%mesh\*.obj %dstDir%data\mesh\
+xcopy /Y %srcDataDir%mesh\*.obj %dstDir%data\mesh\
 
 cp %srcCudaDir%redflash.h %dstDir%cuda\
 cp %srcCudaDir%redflash.cu %dstDir%cuda\
