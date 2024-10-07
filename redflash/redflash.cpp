@@ -237,7 +237,12 @@ std::string resolveDataPath(const char* filename)
     // Potential source locations (in priority order)
     source_locations.push_back(fs::current_path().string() + "/" + filename);
     source_locations.push_back(fs::current_path().string() + "/data/" + filename);
-    source_locations.push_back(base_dir + "/data/" + filename);
+
+    // 絶対パス指定は提出時のアセット漏れの原因になるのでコメントアウト
+    // source_locations.push_back(base_dir + "/data/" + filename);
+
+    // Visual Studioで実行したときの相対パス
+    source_locations.push_back(fs::current_path().string() + "/../../data/" + filename);
 
     for (auto it = source_locations.cbegin(); it != source_locations.end(); ++it) {
         std::cout << "[info] resolvePath source_location: " + *it << std::endl;
