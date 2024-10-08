@@ -1,7 +1,7 @@
 set srcDir=D:\Dropbox\RTCamp\redflash_rtcamp10\build\
 set srcDataDir=D:\Dropbox\RTCamp\redflash_rtcamp10\data\
 set srcCudaDir=D:\Dropbox\RTCamp\redflash_rtcamp10\redflash\
-set dstDir=D:\Dropbox\RTCamp\gam0022_gpu_with_git\
+set dstDir=D:\Dropbox\RTCamp\gam0022_gpu\gam0022_gpu\
 
 cp %srcDir%bin\Release\redflash.exe %dstDir%
 cp %srcDir%bin\Release\sutil_sdk.dll %dstDir%
