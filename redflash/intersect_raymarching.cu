@@ -37,6 +37,19 @@ static __forceinline__ __device__ float3 max_float3(float3 v, float a)
     return make_float3(max(v.x, a), max(v.y, a), max(v.z, a));
 }
 
+float3 cos_float3(float3 v)
+{
+    return make_float3(cos(v.x), cos(v.y), cos(v.z));
+}
+
+float3 pal(float m)
+{
+    // Integer part: Blend ratio with white (0-10)
+    // Decimal part: Hue (0-1)
+    float3 col = make_float3(0.5) + 0.5 * cos_float3(TAU * (make_float3(0.0, 0.33, 0.67) + m));
+    return lerp(col, make_float3(1), 0.1 * floor(m));
+}
+
 void rot(float2& p, float a)
 {
     // 行列バージョン（動かない）
@@ -467,6 +480,9 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
 RT_CALLABLE_PROGRAM void materialAnimation_Laser(MaterialParameter& mat, State& state, int scene_id)
 {
     float3 p = state.hitpoint;
+    float x = smoothstep(0.0, 0.5, time);
+    float y = smoothstep(1.0, 2.0, time);
+    mat.emission = lerp(make_float3(0.1, 0.1, 1.0), pal(mod(p.z * 0.4 + time * 2, 1)), y) * x;
 }
 
 RT_PROGRAM void intersect(int primIdx)

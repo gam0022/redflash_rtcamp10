@@ -804,7 +804,7 @@ Group createDynamicGeometryScene0()
 
     bool isReuseMaterial = false;
 
-    // 光るやつを複数配置
+    // レーザー
     mesh_file = resolveDataPath("mesh/quad_bottom.obj");
 
     for (int i = 0; i < 20; i++)
@@ -813,7 +813,7 @@ Group createDynamicGeometryScene0()
         {
             Transform transform = createDynamicMesh(mesh_file, make_float3(-3.0 + 6 * j, 0.0f, -10 + i + 0.5), make_float3(0.1f, 8.0, 0.1), make_float3(0.0f, 0.0f, 1.0f), TAU * 0.1f * i);
             mat.emission = make_float3(0.1, 0.1, 1.0);
-            registerMaterial(dynamic_scene0_gis.back(), mat, Nop, false, isReuseMaterial);
+            registerMaterial(dynamic_scene0_gis.back(), mat, Laser, false, isReuseMaterial);
             group->addChild(transform);
             isReuseMaterial = true;
         }
@@ -1062,16 +1062,24 @@ void updateFrame(float time)
             camera_eye = make_float3(0.0f, 1.1, -1 + t) + eye_shake;
             camera_lookat = ball_center;
         }
-        else if (time < 7)
+        else if (time < 8)
         {
             // 外の世界からターゲットを追尾するカメラ
-            camera_eye = make_float3(3.0f, 1.8, 0.0) + eye_shake;
-            camera_lookat = ball_center;
+            float3 e0 = make_float3(0.5f, 1.2, 2.0) + eye_shake;
+            float3 t0 = ball_center;
+
+            // 外の世界からターゲットを俯瞰するカメラ
+            float3 e1 = make_float3(3.0, 1.2, 3.0) + eye_shake;
+            float3 t1 = make_float3(0, 1, 2);
+
+            float x = smoothstep(7, 8, time);
+            camera_eye = lerp(e0, e1, x);
+            camera_lookat = lerp(t0, t1, x);
         }
         else if (time < 10)
         {
-            t = time - 7;
-            float e = easeInOutCubic(t / 3);
+            t = time - 8;
+            float e = easeInOutCubic(t / 2);
             // 外の世界をじっくり見せるカメラ
             camera_eye = make_float3(24.0f, 1.8 + 200 * e, 24.0 + 40.0 * e) + eye_shake;
             camera_fov = lerp(30, 90, e);
@@ -1100,7 +1108,7 @@ void updateFrame(float time)
         mat_handle = mat * mat_handle;
         dynamic_scene0_transforms[2]->setMatrix(false, mat_handle.getData(), false);
 
-        // 光る棒
+        // レーザー
         for (int i = 0; i < 20; i++)
         {
             for (int j = 0; j < 2; j++)
