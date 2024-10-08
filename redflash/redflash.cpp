@@ -642,12 +642,12 @@ void setupPostprocessing()
 }
 
 void registerMaterial(GeometryInstance& gi, MaterialParameter& mat,
-    MaterialAnimationProgramType material_animation_program_id = MaterialAnimationProgramType::Nop, bool isLight = false)
+    MaterialAnimationProgramType material_animation_program_id = MaterialAnimationProgramType::Nop, bool isLight = false, bool isReuse = false)
 {
     materialParameters.push_back(mat);
     gi->setMaterialCount(1);
     gi->setMaterial(0, isLight ? light_material : common_material);
-    gi["material_id"]->setInt(materialCount++);
+    gi["material_id"]->setInt(isReuse ? materialCount : materialCount++);
     gi["bsdf_id"]->setInt(mat.bsdf);
     gi["material_animation_program_id"]->setInt(material_animation_program_id);
 }
@@ -736,6 +736,9 @@ Group createDynamicGeometryScene0()
 {
     MaterialParameter mat;
 
+    Group group = context->createGroup();
+    group->setAcceleration(context->createAcceleration("Trbvh"));
+
     // Mesh door_base
     std::string mesh_file = resolveDataPath("mesh/door_base.obj");
     Transform door_base = createDynamicMesh(mesh_file, make_float3(-0.42f, 0.0f, -0.4f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
@@ -744,25 +747,32 @@ Group createDynamicGeometryScene0()
     mat.metallic = 0.05f;
     mat.roughness = 0.95f;
     registerMaterial(dynamic_scene0_gis.back(), mat);
-
-    Group group = context->createGroup();
-    group->setAcceleration(context->createAcceleration("Trbvh"));
-
-    // 階層構造の構築
     group->addChild(door_base);
 
+    // Mesh door_handle
+    mesh_file = resolveDataPath("mesh/door_handle.obj");
+    Transform door_handle = createDynamicMesh(mesh_file, make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
+    mat.bsdf = DISNEY;
+    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
+    mat.metallic = 0.05f;
+    mat.roughness = 0.95f;
+    registerMaterial(dynamic_scene0_gis.back(), mat);
+    group->addChild(door_handle);
+
+    bool isReuseMaterial = false;
 
     // 光るやつを複数配置
-   mesh_file = resolveDataPath("mesh/quad_bottom.obj");
+    mesh_file = resolveDataPath("mesh/quad_bottom.obj");
 
     for (int i = 0; i < 20; i++)
     {
         for (int j = 0; j < 2; j++)
         {
             Transform transform = createDynamicMesh(mesh_file, make_float3(-3.0 + 6 * j, 0.0f, -10 + i + 0.5), make_float3(0.1f, 8.0, 0.1), make_float3(0.0f, 0.0f, 1.0f), TAU * 0.1f * i);
-            mat.emission = make_float3(0.3, 0.3, 1.0);
-            registerMaterial(dynamic_scene0_gis.back(), mat);
+            mat.emission = make_float3(0.1, 0.1, 1.0);
+            registerMaterial(dynamic_scene0_gis.back(), mat, Nop, false, isReuseMaterial);
             group->addChild(transform);
+            isReuseMaterial = true;
         }
     }
 
@@ -1035,6 +1045,10 @@ void updateFrame(float time)
         Matrix4x4 mat = createMatrix(make_float3(-0.42f, 0.0f, -0.05f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
         dynamic_scene0_transforms[0]->setMatrix(false, mat.getData(), false);
 
+        Matrix4x4 mat_handle = createMatrix(make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 0.0f, 1.0f), time * 0.1 * TAU);
+        mat_handle = mat * mat_handle;
+        dynamic_scene0_transforms[1]->setMatrix(false, mat_handle.getData(), false);
+
         // 光る棒
         for (int i = 0; i < 20; i++)
         {
@@ -1043,7 +1057,7 @@ void updateFrame(float time)
                 rad = 0.7 * sin(TAU * (0.5 * time + i * 0.05));
                 if (j == 0) rad = -rad;
                 mat = createMatrix(make_float3(-4.0 + 8 * j, -0.1f, -10 + i + 0.5), make_float3(0.1f, 8.0, 0.1), make_float3(0.0f, 0.0f, 1.0f), rad);
-                dynamic_scene0_transforms[1 + i * 2 + j]->setMatrix(false, mat.getData(), false);
+                dynamic_scene0_transforms[2 + i * 2 + j]->setMatrix(false, mat.getData(), false);
             }
         }
 
