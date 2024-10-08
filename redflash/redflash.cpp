@@ -91,6 +91,7 @@ int total_sample = 0;
 Program pgram_intersection = 0;
 Program pgram_bounding_box = 0;
 Program pgram_intersection_raymarching = 0;
+Program pgram_intersection_raymarching_plane = 0;
 Program pgram_bounding_box_raymarching = 0;
 Program pgram_intersection_sphere = 0;
 Program pgram_bounding_box_sphere = 0;
@@ -359,7 +360,16 @@ GeometryInstance createRaymrachingObject(const float3& center, const float3& bou
 {
     Geometry raymarching = context->createGeometry();
     raymarching->setPrimitiveCount(1u);
-    raymarching->setIntersectionProgram(pgram_intersection_raymarching);
+
+    if (mapType == Ocean)
+    {
+        raymarching->setIntersectionProgram(pgram_intersection_raymarching_plane);
+    }
+    else
+    {
+        raymarching->setIntersectionProgram(pgram_intersection_raymarching);
+    }
+
     raymarching->setBoundingBoxProgram(pgram_bounding_box_raymarching);
 
     raymarching["center"]->setFloat(center);
@@ -604,6 +614,7 @@ void createContext()
     ptx = sutil::getPtxString(SAMPLE_NAME, "intersect_raymarching.cu");
     pgram_bounding_box_raymarching = context->createProgramFromPTXString(ptx, "bounds");
     pgram_intersection_raymarching = context->createProgramFromPTXString(ptx, "intersect");
+    pgram_intersection_raymarching_plane = context->createProgramFromPTXString(ptx, "intersect_Plane");
     setupRaymarchingMapProgram(ptx);
 
     // Material Custom Program
@@ -1042,6 +1053,7 @@ void updateFrame(float time)
     float vignetteIntensity = 0.9;
 
     float3 eye_shake = 0.05f * sinFbm3((time - 1) / 10.0);
+    ball_center = make_float3(0.0, 1.0, -4.5 + time);
 
     uint scene_id_init = 0;
 
@@ -1135,7 +1147,6 @@ void updateFrame(float time)
         dynamic_scene0_group->getAcceleration()->markDirty();
         dynamic_scene0_group->getContext()->launch(0, 0, 0);
 
-        ball_center = make_float3(0.0, 1.0, -4.5 + time);
         context["ball_center"]->setFloat(ball_center);
         ball_g["center"]->setFloat(ball_center);
         ball_g["aabb_min"]->setFloat(ball_center - 1 * 0.5f);

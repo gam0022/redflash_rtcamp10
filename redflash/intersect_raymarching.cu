@@ -568,6 +568,44 @@ RT_PROGRAM void intersect(int primIdx)
     }
 }
 
+RT_PROGRAM void intersect_Plane(int primIdx)
+{
+    float eps;
+    float t = ray.tmin, d = 0.0;
+    float3 p = ray.origin;
+
+    if (current_prd.depth == 0)
+    {
+        t = max(current_prd.distance, t);
+    }
+
+    for (int i = 0; i < raymarching_iteration; i++)
+    {
+        p = ray.origin + t * ray.direction;
+        d = map(p, current_prd.scene_id);
+
+        // XZ平面を仮定してレイを引き伸ばす
+        // float cos_t = dot(make_float3(0, 1, 0), -ray.direction);
+        float cos_t = -ray.direction.y;
+        d *= max(1.0f / cos_t, 1.0f);
+
+        t += d;
+        eps = scene_epsilon * t;
+        if (abs(d) < eps || t > ray.tmax)
+        {
+            break;
+        }
+    }
+
+    // if (t < ray.tmax && rtPotentialIntersection(t))
+    if (abs(d) < eps && rtPotentialIntersection(t))
+    {
+        shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon, current_prd.scene_id);
+        texcoord = make_float3(p.x, p.y, 0);
+        rtReportIntersection(0);
+    }
+}
+
 float calcSlope(float t0, float t1, float r0, float r1)
 {
     return (r1 - r0) / max(t1 - t0, 1e-5);
