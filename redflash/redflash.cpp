@@ -700,7 +700,7 @@ GeometryGroup createStaticGeometryCommon()
 
     // Mesh portal
     std::string mesh_file = resolveDataPath("mesh/portal.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(0.0f), make_float3(3.0f)));
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f), make_float3(1.0f)));
     mat.bsdf = PORTAL;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.8f;
@@ -719,7 +719,7 @@ GeometryGroup createStaticGeometryScene0()
 
     // Mesh Room
     std::string mesh_file = resolveDataPath("mesh/room.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(3.0f)));
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f)));
     mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.8f;
@@ -737,7 +737,7 @@ Group createDynamicGeometryCommon()
 
     // Mesh door_base
     std::string mesh_file = resolveDataPath("mesh/door_base.obj");
-    Transform door_base = createDynamicMesh(mesh_file, make_float3(-0.42f * 3.0f, 0.0f, -0.4f * 3.0f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
+    Transform door_base = createDynamicMesh(mesh_file, make_float3(-0.42f, 0.0f, -0.4f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
     mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.05f;
@@ -1026,7 +1026,7 @@ void updateFrame(float time)
     {
         float rad = TAU * clamp(time - 1, 0.0f, 2.0f) / 5.0f;
         // rad = TAU * 2 / 5 * clamp(sin(time * TAU / 5), 0.0f, 1.0f);
-        Matrix4x4 mat = createMatrix(make_float3(-0.42f * 3.0f, 0.0f, 3.0f * -0.05f), make_float3(3.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
+        Matrix4x4 mat = createMatrix(make_float3(-0.42f, 0.0f, -0.05f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
         dynamic_common_transforms[0]->setMatrix(false, mat.getData(), false);
 
         dynamic_common_group->getAcceleration()->markDirty();

@@ -285,7 +285,7 @@ float4 map_id_rtcamp9(float3 pos, int scene_id)
 #define M_Floor 0
 #define M_IFS_Base 1
 #define M_IFS_Emissive 2
-#define M_S2_Box 3
+#define M_Towers 3
 
 #define phase(x) (floor(x) + .5 + .5 * cos(TAU * .5 * exp(-5. * mod(x, 1))))
 
@@ -365,8 +365,10 @@ float4 map_id(float3 pos, int scene_id)
     }
     else if (scene_id == 1)
     {
-        float d = sdTowers(pos - make_float3(0, 2, 0));
-        m0 = make_float4(d, M_S2_Box, 0, 0);
+        float s = 8;
+        float3 p = pos / s - make_float3(0, -2, 0);
+        float d = sdTowers(p) * s;
+        m0 = make_float4(d, M_Towers, 0, 0);
     }
 
     return m0;
@@ -443,7 +445,7 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
         float a = saturate(cos((-p.z / 256 + time) * TAU));
         mat.emission += make_float3(0.2, 0.2, 4) * a;
     }
-    else if (id == M_S2_Box)
+    else if (id == M_Towers)
     {
         mat.albedo = make_float3(0.7, 0.7, 0.7);
         mat.roughness = 0.7;
