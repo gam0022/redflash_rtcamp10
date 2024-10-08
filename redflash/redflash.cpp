@@ -749,11 +749,19 @@ Group createDynamicGeometryScene0()
     registerMaterial(dynamic_scene0_gis.back(), mat);
     group->addChild(door_base);
 
+    // Mesh door_glass
+    mesh_file = resolveDataPath("mesh/door_glass.obj");
+    Transform door_glass = createDynamicMesh(mesh_file, make_float3(-0.42f, 0.0f, -0.4f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
+    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
+    mat.metallic = 0.15f;
+    mat.roughness = 0.01f;
+    registerMaterial(dynamic_scene0_gis.back(), mat);
+    group->addChild(door_glass);
+
     // Mesh door_handle
     mesh_file = resolveDataPath("mesh/door_handle.obj");
     Transform door_handle = createDynamicMesh(mesh_file, make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
-    mat.bsdf = DISNEY;
-    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
+    mat.albedo = make_float3(1.0f, 0.4f, 0.6f);
     mat.metallic = 0.05f;
     mat.roughness = 0.95f;
     registerMaterial(dynamic_scene0_gis.back(), mat);
@@ -1044,10 +1052,11 @@ void updateFrame(float time)
         // rad = TAU * 2 / 5 * clamp(sin(time * TAU / 5), 0.0f, 1.0f);
         Matrix4x4 mat = createMatrix(make_float3(-0.42f, 0.0f, -0.05f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
         dynamic_scene0_transforms[0]->setMatrix(false, mat.getData(), false);
+        dynamic_scene0_transforms[1]->setMatrix(false, mat.getData(), false);
 
         Matrix4x4 mat_handle = createMatrix(make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 0.0f, 1.0f), time * 0.1 * TAU);
         mat_handle = mat * mat_handle;
-        dynamic_scene0_transforms[1]->setMatrix(false, mat_handle.getData(), false);
+        dynamic_scene0_transforms[2]->setMatrix(false, mat_handle.getData(), false);
 
         // 光る棒
         for (int i = 0; i < 20; i++)
@@ -1057,7 +1066,7 @@ void updateFrame(float time)
                 rad = 0.7 * sin(TAU * (0.5 * time + i * 0.05));
                 if (j == 0) rad = -rad;
                 mat = createMatrix(make_float3(-4.0 + 8 * j, -0.1f, -10 + i + 0.5), make_float3(0.1f, 8.0, 0.1), make_float3(0.0f, 0.0f, 1.0f), rad);
-                dynamic_scene0_transforms[2 + i * 2 + j]->setMatrix(false, mat.getData(), false);
+                dynamic_scene0_transforms[3 + i * 2 + j]->setMatrix(false, mat.getData(), false);
             }
         }
 
