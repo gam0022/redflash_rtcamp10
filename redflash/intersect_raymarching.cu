@@ -153,6 +153,13 @@ float3 opRep(float3 p, float3 interval)
     return p;
 }
 
+float3 opRepXZ(float3 p, float2 interval)
+{
+    p.x = opRep(p.x, interval.x);
+    p.z = opRep(p.z, interval.y);
+    return p;
+}
+
 void opUnion(float4& m1, float4& m2)
 {
     if (m2.x < m1.x) m1 = m2;
@@ -282,6 +289,34 @@ float4 map_id_rtcamp9(float3 pos, int scene_id)
 
 #define phase(x) (floor(x) + .5 + .5 * cos(TAU * .5 * exp(-5. * mod(x, 1))))
 
+float sdTowers(float3 pos)
+{
+    float s = 1;
+    float d;
+
+    // p.xz *= rotate2D(t * .2);
+    float2 rep = make_float2(3, 3);
+    float3 p = opRepXZ(pos, rep);
+
+    float2 grid = floor(make_float2(pos.x, pos.z) / rep);
+    float height = 3.2;
+
+    p.y -= height;
+
+    for (int j = 0; j < 9; j++) {
+        s /= d = min(dot(p, p), 0.42) + 0.1;
+        p = abs_float3(p) / d - 0.2;
+        p.y -= height;
+    }
+
+    d = length(p) / s - height / s;
+
+    // 下半分だけ切り取る
+    d = max(d, pos.y - height);
+
+    return d;
+}
+
 float4 map_id(float3 pos, int scene_id)
 {
     float4 m0 = make_float4(100, 0, 0, 0);
@@ -330,8 +365,8 @@ float4 map_id(float3 pos, int scene_id)
     }
     else if (scene_id == 1)
     {
-        float3 p = opRep(pos, make_float3(20, 20, 20));
-        m0 = make_float4(dBox(p, make_float3(2, 2, 2)) - 0.3, M_S2_Box, 0, 0);
+        float d = sdTowers(pos - make_float3(0, 2, 0));
+        m0 = make_float4(d, M_S2_Box, 0, 0);
     }
 
     return m0;
@@ -410,9 +445,9 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
     }
     else if (id == M_S2_Box)
     {
-        mat.albedo = make_float3(1.0, 0.2, 0.2);
-        mat.roughness = 0.05;
-        mat.metallic = 0.8;
+        mat.albedo = make_float3(0.7, 0.7, 0.7);
+        mat.roughness = 0.7;
+        mat.metallic = 0.1;
     }
 }
 

@@ -511,7 +511,7 @@ void createContext()
     context->setMaxTraceDepth(2);
 
     context["scene_id_init"]->setUint(0);
-    context["scene_epsilon"]->setFloat(0.004f);
+    context["scene_epsilon"]->setFloat(0.001f);
     context["raymarching_iteration"]->setUint(100);
     context["useLight"]->setUint(useLight ? 1 : 0);
     // context["rr_begin_depth"]->setUint( rr_begin_depth );
