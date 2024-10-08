@@ -29,14 +29,15 @@ enum MaterialAnimationProgramType
 {
     Nop,
     Raymarching,
-    Laser
+    Laser,
+    Ocean
 };
 
 enum RaymarchingMapType
 {
     Ball,
     Tower,
-    Ocean
+    OceanMap
 };
 
 struct MaterialParameter

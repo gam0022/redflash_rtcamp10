@@ -536,6 +536,27 @@ RT_CALLABLE_PROGRAM void materialAnimation_Laser(MaterialParameter& mat, State& 
     mat.emission = lerp(make_float3(0.1, 0.1, 1.0), pal(mod(p.z * 0.4 + time * 2, 1)), y) * x;
 }
 
+RT_CALLABLE_PROGRAM void materialAnimation_Ocean(MaterialParameter& mat, State& state, int scene_id)
+{
+    float3 p = state.hitpoint;
+    float2 p2 = make_float2(p.x, p.z);
+
+    float e = 0.01;
+    float depth = 1;
+    float ITERATIONS_NORMAL = 20;
+    float H = heightOcean(p2, ITERATIONS_NORMAL, 1) * depth;
+    float3 a = make_float3(p.x, H, p.y);
+    float3 n = normalize(
+        cross(
+            a - make_float3(p.x - e, heightOcean(p2 - make_float2(e, 0), ITERATIONS_NORMAL, 1) * depth, p.y),
+            a - make_float3(p.x, heightOcean(p2 + make_float2(0, e), ITERATIONS_NORMAL, 1) * depth, p.y + e)
+        )
+    );
+
+    state.normal = n;
+    state.ffnormal = n;
+}
+
 RT_PROGRAM void intersect(int primIdx)
 {
     float eps;
@@ -586,7 +607,7 @@ RT_PROGRAM void intersect_Plane(int primIdx)
 
         // XZ平面を仮定してレイを引き伸ばす
         // float cos_t = dot(make_float3(0, 1, 0), -ray.direction);
-        float cos_t = -ray.direction.y;
+        float cos_t = ray.direction.y;
         d *= max(1.0f / cos_t, 1.0f);
 
         t += d;

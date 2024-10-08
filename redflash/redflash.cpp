@@ -529,7 +529,7 @@ void setupRaymarchingMapProgram(const char* ptx)
 void setupMaterialAnimationProgram(const char* ptx)
 {
     std::string prefix = "materialAnimation_";
-    std::vector<std::string> prg_names = { "Nop", "Raymarching", "Laser" };
+    std::vector<std::string> prg_names = { "Nop", "Raymarching", "Laser", "Ocean"};
     int prg_count = prg_names.size();
 
     optix::Buffer buffer_MaterialAnimation_prgs = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, prg_count);
@@ -779,6 +779,24 @@ GeometryGroup createStaticGeometryScene0()
     return gg;
 }
 
+GeometryGroup createStaticGeometryScene1()
+{
+    MaterialParameter mat;
+    std::vector<GeometryInstance> gis;
+
+    // Mesh Ocean
+    std::string mesh_file = resolveDataPath("mesh/plane.obj");
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f, -8.0f, 0.0f), make_float3(10000.0f, 1.0f, 10000.0f)));
+    mat.albedo = make_float3(0.2, 0.2, 0.7);
+    mat.metallic = 1.0;
+    mat.roughness = 0.0;
+    registerMaterial(gis.back(), mat, Ocean);
+
+    GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
+    gg->setAcceleration(context->createAcceleration("Trbvh"));
+    return gg;
+}
+
 Group createDynamicGeometryScene0()
 {
     MaterialParameter mat;
@@ -877,14 +895,16 @@ GeometryGroup createRaymarchingGeometryScene1()
     registerMaterial(gis.back(), mat);
 
     // Raymarcing Ocean
+    /*
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f, -8.0f, 0.0f),
-        make_float3(10000.0f, 0.1f, 10000.0f),
+        make_float3(10.0f, 0.1f, 10.0f),
         Ocean));
     mat.albedo = make_float3(0.2, 0.2, 0.7);
     mat.metallic = 1.0;
     mat.roughness = 0.0;
     registerMaterial(gis.back(), mat);
+    */
 
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
     gg->setAcceleration(context->createAcceleration("Trbvh"));
@@ -1000,12 +1020,14 @@ void setupScene()
 
     // Scene1
     GeometryGroup raymarching_scene1_gg = createRaymarchingGeometryScene1();
+    GeometryGroup static_scene1_gg = createStaticGeometryScene1();
 
     top_object_scene1 = context->createGroup();
     top_object_scene1->setAcceleration(context->createAcceleration("Trbvh"));
+    top_object_scene1->addChild(static_common_gg);
+    top_object_scene1->addChild(static_scene1_gg);
     top_object_scene1->addChild(raymarching_common_gg);
     top_object_scene1->addChild(raymarching_scene1_gg);
-    top_object_scene1->addChild(static_common_gg);
     top_object_scene1->addChild(light_group);
     context["top_object_scene1"]->set(top_object_scene1);
 
