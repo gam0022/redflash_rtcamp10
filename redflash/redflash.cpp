@@ -185,9 +185,15 @@ std::vector<GeometryInstance> light_gis;
 GeometryGroup light_group;
 
 // 動的にシーンをアップデートするための参照
+GeometryGroup raymarching_common_gg;
+
 Group dynamic_scene0_group;
 std::vector<Transform> dynamic_scene0_transforms;
 std::vector<GeometryInstance > dynamic_scene0_gis;
+
+// Ball
+float3 ball_center;
+Geometry ball_g;
 
 // WASD移動
 bool is_key_W_pressed = false;
@@ -360,6 +366,12 @@ GeometryInstance createRaymrachingObject(const float3& center, const float3& bou
     raymarching["aabb_min"]->setFloat(center - bounds_size * 0.5f);
     raymarching["aabb_max"]->setFloat(center + bounds_size * 0.5f);
     raymarching["map_id"]->setInt(mapType);
+
+    if (mapType == Ball)
+    {
+        ball_g = raymarching;
+        context["ball_center"]->setFloat(center);
+    }
 
     GeometryInstance gi = context->createGeometryInstance();
     gi->setGeometry(raymarching);
@@ -807,12 +819,34 @@ Group createDynamicGeometryScene0()
         }
     }
 
+    // うまくいかない
     for (auto transform = dynamic_scene0_transforms.begin(); transform != dynamic_scene0_transforms.end(); ++transform)
     {
         // group->addChild(transform);
     }
 
     return group;
+}
+
+GeometryGroup createRaymarchingGeometryCommon()
+{
+    MaterialParameter mat;
+
+    std::vector<GeometryInstance> gis;
+
+    // Raymarcing
+    gis.push_back(createRaymrachingObject(
+        make_float3(0.0f, 1.0, -4),
+        make_float3(0.5f),
+        Ball));
+    mat.albedo = make_float3(1.0);
+    mat.metallic = 1.0;
+    mat.roughness = 0.0;
+    registerMaterial(gis.back(), mat);
+
+    GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
+    gg->setAcceleration(context->createAcceleration("Trbvh"));
+    return gg;
 }
 
 GeometryGroup createRaymarchingGeometryScene1()
@@ -824,7 +858,7 @@ GeometryGroup createRaymarchingGeometryScene1()
     // Raymarcing
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f, 10.0f, 0.0f),
-        make_float3(2000.0f, 20.0f, 2000.0f),
+        make_float3(10000.0f, 20.0f, 10000.0f),
         Tower));
     mat.albedo = make_float3(0.7);
     mat.metallic = 0.1f;
@@ -928,6 +962,7 @@ void setupScene()
 {
     GeometryGroup static_common_gg = createStaticGeometryCommon();
     light_group = createGeometryLight();
+    raymarching_common_gg = createRaymarchingGeometryCommon();
 
     // Scene0
     GeometryGroup static_scene0_gg = createStaticGeometryScene0();
@@ -935,6 +970,7 @@ void setupScene()
     
     top_object_scene0 = context->createGroup();
     top_object_scene0->setAcceleration(context->createAcceleration("Trbvh"));
+    top_object_scene0->addChild(raymarching_common_gg);
     top_object_scene0->addChild(static_common_gg);
     top_object_scene0->addChild(static_scene0_gg);
     top_object_scene0->addChild(dynamic_scene0_group);
@@ -946,6 +982,7 @@ void setupScene()
 
     top_object_scene1 = context->createGroup();
     top_object_scene1->setAcceleration(context->createAcceleration("Trbvh"));
+    top_object_scene1->addChild(raymarching_common_gg);
     top_object_scene1->addChild(raymarching_scene1_gg);
     top_object_scene1->addChild(static_common_gg);
     top_object_scene1->addChild(light_group);
@@ -979,6 +1016,11 @@ void setupCamera()
     camera_rotate = Matrix4x4::identity();
 }
 
+float saturate(float x)
+{
+    return clamp(x, 0.0, 1.0);
+}
+
 // アニメーションの実装
 void updateFrame(float time)
 {
@@ -990,7 +1032,6 @@ void updateFrame(float time)
     float vignetteIntensity = 0.9;
 
     float3 eye_shake = 0.05f * sinFbm3((time - 1) / 10.0);
-    float3 target_shake = -0.1f * sinFbm3(time / 10.0);
 
     uint scene_id_init = 0;
 
@@ -1001,37 +1042,43 @@ void updateFrame(float time)
         camera_fov = 90.0f;
         camera_lookat = make_float3(0.0f, 1.0f, 0.0f);
 
-        camera_eye = make_float3(2.0f, 1.8, -5.0f) * 0.4 + eye_shake;
+        camera_eye = make_float3(2.0f, 1.8, -5.0f) * eye_shake;
 
         if (time < 2)
         {
             // 部屋全体のカメラ
-            camera_eye = make_float3(0.0 + time, 2.0, -9.0f + time * 2.0) + 0.1 * eye_shake;
+            camera_eye = make_float3(0.0 + time, 2.0, -9.0f + time * 2.0) + eye_shake;
         }
         else if (time < 4)
         {
             // 扉が開き、横から見るカメラ
-            camera_eye = make_float3(2.0f, 1.8, -2.5 + time * 0.3) + 0.1 * eye_shake;
+            camera_eye = make_float3(2.0f, 1.8, -2.5 + time * 0.3) + eye_shake;
+            // camera_lookat = ball_center;
         }
         else if (time < 6)
         {
             t = time - 4;
             // ターゲットを追従し、ターゲットと一緒に次の世界に移動
-            camera_eye = make_float3(0.0f, 1.3, -1.5 + t * 1.5) + 0.1 * eye_shake;
-            camera_lookat = make_float3(0.0f, 1.0f, 10.0f);
+            camera_eye = make_float3(0.0f, 1.1, -1 + t) + eye_shake;
+            camera_lookat = ball_center;
         }
         else if (time < 7)
         {
             // 外の世界からターゲットを追尾するカメラ
-            camera_eye = make_float3(3.0f, 1.8, 2.4) + 0.1 * eye_shake;
+            camera_eye = make_float3(3.0f, 1.8, 0.0) + eye_shake;
+            camera_lookat = ball_center;
         }
         else if (time < 10)
         {
             t = time - 7;
             float e = easeInOutCubic(t / 3);
             // 外の世界をじっくり見せるカメラ
-            camera_eye = make_float3(0.0f, 1.8 + 100 * e, 4.0 + e * 80.0) + 0.1 * eye_shake;
+            camera_eye = make_float3(24.0f, 1.8 + 200 * e, 24.0 + 40.0 * e) + eye_shake;
             camera_fov = lerp(30, 90, e);
+
+            t = saturate(time - 9);
+            e = easeInOutCubic(t);
+            camera_lookat = make_float3(100 * e, 1.0f + 100 * e, -100 * e);
         }
 
         if (time > 5)
@@ -1068,6 +1115,15 @@ void updateFrame(float time)
 
         dynamic_scene0_group->getAcceleration()->markDirty();
         dynamic_scene0_group->getContext()->launch(0, 0, 0);
+
+        ball_center = make_float3(0.0, 1.0, -4.5 + time);
+        context["ball_center"]->setFloat(ball_center);
+        ball_g["center"]->setFloat(ball_center);
+        ball_g["aabb_min"]->setFloat(ball_center - 1 * 0.5f);
+        ball_g["aabb_max"]->setFloat(ball_center + 1 * 0.5f);
+
+        raymarching_common_gg->getAcceleration()->markDirty();
+        raymarching_common_gg->getContext()->launch(0, 0, 0);
     }
 
     if (useLight) updateGeometryLight(time);
