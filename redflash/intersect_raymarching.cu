@@ -299,7 +299,7 @@ float4 map_id_rtcamp9(float3 pos, int scene_id)
     return m0;
 }
 
-#define M_Floor 0
+#define M_Default 0
 #define M_IFS_Base 1
 #define M_IFS_Emissive 2
 #define M_Towers 3
@@ -332,6 +332,55 @@ float sdTowers(float3 pos)
     d = max(d, pos.y - height);
 
     return d;
+}
+
+// https://www.shadertoy.com/view/MdXyzX
+// Calculates wave value and its derivative,
+// for the wave direction, position in space, wave frequency and time
+float2 wavedx(float2 position, float2 direction, float frequency, float timeshift)
+{
+    float x = dot(direction, position) * frequency + timeshift;
+    float wave = exp(sin(x) - 1.0);
+    float dx = wave * cos(x);
+    return make_float2(wave, -dx);
+}
+
+float heightOcean(float2 position, int iterations, float frequency)
+{
+    float wavePhaseShift = length(position) * 0.1; // this is to avoid every octave having exactly the same phase everywhere
+    float iter = 0.0; // this will help generating well distributed wave directions
+    // float frequency = 3.0; // frequency of the wave, this will change every iteration
+    float timeMultiplier = 2.0; // time multiplier for the wave, this will change every iteration
+    float weight = 1.0;// weight in final sum for the wave, this will change every iteration
+    float sumOfValues = 0.0; // will store final sum of values
+    float sumOfWeights = 0.0; // will store final sum of weights
+
+    for (int i = 0; i < iterations; i++) {
+        // generate some wave direction that looks kind of random
+        float2 p = make_float2(sin(iter), cos(iter));
+
+        // calculate wave data
+        float2 res = wavedx(position, p, frequency, time * timeMultiplier + wavePhaseShift);
+
+        // shift position around according to wave drag and derivative of the wave
+        float DRAG_MULT = 0.18;
+        position += p * res.y * weight * DRAG_MULT;
+
+        // add the results to sums
+        sumOfValues += res.x * weight;
+        sumOfWeights += weight;
+
+        // modify next octave ;
+        weight = lerp(weight, 0.0, 0.2);
+        frequency *= 1.18;
+        timeMultiplier *= 1.07;
+
+        // add some kind of random value to make next wave look random too
+        iter += 1232.399963;
+    }
+
+    // calculate and return
+    return sumOfValues / sumOfWeights;
 }
 
 float4 ifs_test(float3 pos, int scene_id)
@@ -381,7 +430,7 @@ RT_CALLABLE_PROGRAM float4 RaymarchingMap_Ball(float3 pos, int scene_id)
     float freq = 8;
     float t = time;
     float d = length(p) - 0.2 - 0.05 * (sin(p.x * freq + t + 0.3) + sin(p.y * freq + t) + sin(p.z * freq + t));
-    float4 m0 = make_float4(d, M_Towers, 0, 0);
+    float4 m0 = make_float4(d, M_Default, 0, 0);
     return m0;
 }
 
@@ -390,7 +439,25 @@ RT_CALLABLE_PROGRAM float4 RaymarchingMap_Tower(float3 pos, int scene_id)
     float scale = 8;
     float3 p = pos / scale - make_float3(0, -2, 0);
     float d = sdTowers(p) * scale;
-    float4 m0 = make_float4(d, M_Towers, 0, 0);
+    float4 m0 = make_float4(d, M_Default, 0, 0);
+    return m0;
+}
+
+RT_CALLABLE_PROGRAM float4 RaymarchingMap_Ocean(float3 pos, int scene_id)
+{
+    float3 p = pos;
+    p.y += 8;
+
+    float h = 0.0;
+
+    if (p.y < 0.2) {
+        float frequency = 1;
+        // frequency = clamp(15.0f / p.y, 0.001f, 3.0f);
+        h = heightOcean(make_float2(p.x, p.z), 20, frequency);
+    }
+
+    float d = p.y - 0.2 * h;
+    float4 m0 = make_float4(d, M_Default, 0, 0);
     return m0;
 }
 
@@ -444,13 +511,7 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
     float4 m = prgs_RaymarchingMap[map_id](p, scene_id);
     uint id = uint(m.y);
 
-    if (id == M_Floor)
-    {
-        mat.albedo = make_float3(1.0, 1.0, 1.0);
-        mat.roughness = 0.15;
-        mat.metallic = 0.9;
-    }
-    else if (id == M_IFS_Base)
+    if (id == M_IFS_Base)
     {
         mat.albedo = make_float3(0.2, 0.2, 0.2);
         mat.roughness = 0.05;
@@ -465,16 +526,6 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
         float a = saturate(cos((-p.z / 256 + time) * TAU));
         mat.emission += make_float3(0.2, 0.2, 4) * a;
     }
-    else if (id == M_Towers)
-    {
-        mat.albedo = make_float3(0.7, 0.7, 0.7);
-        mat.roughness = 0.7;
-        mat.metallic = 0.1;
-    }
-
-    mat.albedo = make_float3(0.7, 0.7, 0.7);
-    mat.roughness = 0.7;
-    mat.metallic = 0.1;
 }
 
 RT_CALLABLE_PROGRAM void materialAnimation_Laser(MaterialParameter& mat, State& state, int scene_id)

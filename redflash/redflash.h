@@ -35,7 +35,8 @@ enum MaterialAnimationProgramType
 enum RaymarchingMapType
 {
     Ball,
-    Tower
+    Tower,
+    Ocean
 };
 
 struct MaterialParameter

@@ -500,7 +500,7 @@ void setupBSDF(std::vector<std::string>& bsdf_paths)
 void setupRaymarchingMapProgram(const char* ptx)
 {
     std::string prefix = "RaymarchingMap_";
-    std::vector<std::string> prg_names = { "Ball", "Tower" };
+    std::vector<std::string> prg_names = { "Ball", "Tower", "Ocean"};
     int prg_count = prg_names.size();
 
     optix::Buffer buffer_RaymarchingMap_prgs = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, prg_count);
@@ -855,7 +855,7 @@ GeometryGroup createRaymarchingGeometryScene1()
 
     std::vector<GeometryInstance> gis;
 
-    // Raymarcing
+    // Raymarcing Tower
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f, 10.0f, 0.0f),
         make_float3(10000.0f, 20.0f, 10000.0f),
@@ -863,6 +863,16 @@ GeometryGroup createRaymarchingGeometryScene1()
     mat.albedo = make_float3(0.7);
     mat.metallic = 0.1f;
     mat.roughness = 0.7f;
+    registerMaterial(gis.back(), mat);
+
+    // Raymarcing Ocean
+    gis.push_back(createRaymrachingObject(
+        make_float3(0.0f, -8.0f, 0.0f),
+        make_float3(10000.0f, 0.1f, 10000.0f),
+        Ocean));
+    mat.albedo = make_float3(0.2, 0.2, 0.7);
+    mat.metallic = 1.0;
+    mat.roughness = 0.0;
     registerMaterial(gis.back(), mat);
 
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
