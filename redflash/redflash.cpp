@@ -185,9 +185,9 @@ std::vector<GeometryInstance> light_gis;
 GeometryGroup light_group;
 
 // 動的にシーンをアップデートするための参照
-Group dynamic_common_group;
-std::vector<Transform> dynamic_common_transforms;
-std::vector<GeometryInstance > dynamic_common_gis;
+Group dynamic_scene0_group;
+std::vector<Transform> dynamic_scene0_transforms;
+std::vector<GeometryInstance > dynamic_scene0_gis;
 
 // WASD移動
 bool is_key_W_pressed = false;
@@ -449,8 +449,9 @@ Transform createDynamicMesh(
     transform->setMatrix(false, mat.getData(), 0);
     transform->setChild(geometry_group);
 
-    dynamic_common_gis.push_back(mesh.geom_instance);
-    dynamic_common_transforms.push_back(transform);
+    // FIXME: 外から指定できるようにしたい
+    dynamic_scene0_gis.push_back(mesh.geom_instance);
+    dynamic_scene0_transforms.push_back(transform);
 
     return transform;
 }
@@ -731,7 +732,7 @@ GeometryGroup createStaticGeometryScene0()
     return gg;
 }
 
-Group createDynamicGeometryCommon()
+Group createDynamicGeometryScene0()
 {
     MaterialParameter mat;
 
@@ -742,13 +743,28 @@ Group createDynamicGeometryCommon()
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.05f;
     mat.roughness = 0.95f;
-    registerMaterial(dynamic_common_gis.back(), mat);
+    registerMaterial(dynamic_scene0_gis.back(), mat);
 
     Group group = context->createGroup();
     group->setAcceleration(context->createAcceleration("Trbvh"));
 
     // 階層構造の構築
     group->addChild(door_base);
+
+
+    // 光るやつを複数配置
+   mesh_file = resolveDataPath("mesh/quad_bottom.obj");
+
+    for (int i = 0; i < 20; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            Transform transform = createDynamicMesh(mesh_file, make_float3(-3.0 + 6 * j, 0.0f, -10 + i + 0.5), make_float3(0.1f, 8.0, 0.1), make_float3(0.0f, 0.0f, 1.0f), TAU * 0.1f * i);
+            mat.emission = make_float3(0.3, 0.3, 1.0);
+            registerMaterial(dynamic_scene0_gis.back(), mat);
+            group->addChild(transform);
+        }
+    }
 
     return group;
 }
@@ -865,17 +881,17 @@ void setupScene()
 {
     GeometryGroup static_common_gg = createStaticGeometryCommon();
     GeometryGroup raymarching_gg = createRaymarchingGeometry();
-    dynamic_common_group = createDynamicGeometryCommon();
     light_group = createGeometryLight();
 
     // Scene0
     GeometryGroup static_scene0_gg = createStaticGeometryScene0();
+    dynamic_scene0_group = createDynamicGeometryScene0();
     top_object_scene0 = context->createGroup();
     top_object_scene0->setAcceleration(context->createAcceleration("Trbvh"));
-    top_object_scene0->addChild(raymarching_gg);
+    // top_object_scene0->addChild(raymarching_gg);
     top_object_scene0->addChild(static_common_gg);
     top_object_scene0->addChild(static_scene0_gg);
-    top_object_scene0->addChild(dynamic_common_group);
+    top_object_scene0->addChild(dynamic_scene0_group);
     top_object_scene0->addChild(light_group);
     context["top_object_scene0"]->set(top_object_scene0);
 
@@ -884,7 +900,6 @@ void setupScene()
     top_object_scene1->setAcceleration(context->createAcceleration("Trbvh"));
     top_object_scene1->addChild(raymarching_gg);
     top_object_scene1->addChild(static_common_gg);
-    // top_object_scene1->addChild(dynamic_common_group);
     top_object_scene1->addChild(light_group);
     context["top_object_scene1"]->set(top_object_scene1);
 
@@ -910,8 +925,8 @@ void setupCamera()
     camera_up = make_float3(0.0f, 1.0f, 0.0f);
 
     // 中心
-    camera_eye = make_float3(0, 3.0f, 10.0f);
-    camera_lookat = make_float3(0, 3.0f, 0.0f);
+    camera_eye = make_float3(0, 2.0f, -5.0f);
+    camera_lookat = make_float3(0, 1.0f, 0.0f);
 
     camera_rotate = Matrix4x4::identity();
 }
@@ -920,7 +935,7 @@ void setupCamera()
 void updateFrame(float time)
 {
     // NOTE: falseにすれば自由カメラになる
-    bool update_camera = true;
+    bool update_camera = !true;
 
     bool update_dynamic = true;
 
@@ -936,19 +951,9 @@ void updateFrame(float time)
         camera_up = make_float3(0.0f, 1.0f, 0.0f);
         camera_fov = 90.0f;
 
-        float a = 1.0f;
+        camera_lookat = make_float3(0.0f, 1.0f, 0.0f);
 
-        camera_eye = make_float3(20.0f * sin(time * TAU / 10 * a), 8.0f + 2.0 * sin(time * TAU / 5.0f * a), -20.0f * cos(time * TAU / 10 * a)) * 0.4 + eye_shake;
-        camera_lookat = make_float3(0.0f, 2.0f, 0.0f) + target_shake;
-
-        if (time < 5)
-        {
-            camera_eye = make_float3(0, 8.0f + 2.0 * sin(time * TAU / 5.0f * a), -15.0f) * 0.4 + eye_shake;
-        }
-        else
-        {
-            camera_eye = make_float3(0, 8.0f + 2.0 * sin(time * TAU / 5.0f * a), 15.0f) * 0.4 + eye_shake;
-        }
+        camera_eye = make_float3(2.0f, 1.8, -5.0f) * 0.4 + eye_shake;
 
         /*
         if (time < 2)
@@ -1024,13 +1029,27 @@ void updateFrame(float time)
 
     if (update_dynamic)
     {
+        // ドアの開閉
         float rad = TAU * clamp(time - 1, 0.0f, 2.0f) / 5.0f;
         // rad = TAU * 2 / 5 * clamp(sin(time * TAU / 5), 0.0f, 1.0f);
         Matrix4x4 mat = createMatrix(make_float3(-0.42f, 0.0f, -0.05f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
-        dynamic_common_transforms[0]->setMatrix(false, mat.getData(), false);
+        dynamic_scene0_transforms[0]->setMatrix(false, mat.getData(), false);
 
-        dynamic_common_group->getAcceleration()->markDirty();
-        dynamic_common_group->getContext()->launch(0, 0, 0);
+        // 光る棒
+        for (int i = 0; i < 20; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                rad = 0.7 * sin(TAU * (0.5 * time + i * 0.05));
+                if (j == 0) rad = -rad;
+                mat = createMatrix(make_float3(-4.0 + 8 * j, -0.1f, -10 + i + 0.5), make_float3(0.1f, 8.0, 0.1), make_float3(0.0f, 0.0f, 1.0f), rad);
+                dynamic_scene0_transforms[1 + i * 2 + j]->setMatrix(false, mat.getData(), false);
+            }
+        }
+
+
+        dynamic_scene0_group->getAcceleration()->markDirty();
+        dynamic_scene0_group->getContext()->launch(0, 0, 0);
     }
 
     if (useLight) updateGeometryLight(time);
@@ -1060,6 +1079,9 @@ void updateCamera()
         camera_eye, camera_lookat, camera_up, camera_fov, aspect_ratio,
         camera_u, camera_v, camera_w, /*fov_is_vertical*/ true);
 
+    // 左手系Y-UPにしたいので反転
+    camera_u = -camera_u;
+
     frame = Matrix4x4::fromBasis(
         normalize(camera_u),
         normalize(camera_v),
@@ -1076,6 +1098,9 @@ void updateCamera()
     sutil::calculateCameraVariables(
         camera_eye, camera_lookat, camera_up, camera_fov, aspect_ratio,
         camera_u, camera_v, camera_w, true);
+
+    // 左手系Y-UPにしたいので反転
+    camera_u = -camera_u;
 
     camera_rotate = Matrix4x4::identity();
 
