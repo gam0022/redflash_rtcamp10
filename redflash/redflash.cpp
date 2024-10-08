@@ -1112,7 +1112,7 @@ void updateFrame(float time)
             camera_lookat = make_float3(100 * e, 1.0f + 100 * e, -100 * e);
         }
 
-        if (time > 5)
+        if (time >= 5)
         {
             scene_id_init = 1;
         }
