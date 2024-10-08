@@ -28,7 +28,14 @@ enum BSDFType
 enum MaterialAnimationProgramType
 {
     Nop,
-    Raymarching
+    Raymarching,
+    Laser
+};
+
+enum RaymarchingMapType
+{
+    Ball,
+    Tower
 };
 
 struct MaterialParameter

@@ -122,7 +122,7 @@ Buffer getOutputBuffer();
 void destroyContext();
 void registerExitHandler();
 void createContext();
-void createRaymarchingGeometry();
+void createRaymarchingGeometryScene1();
 void setupCamera();
 void setupLights();
 void updateCamera();
@@ -254,7 +254,7 @@ float4 make_plane( float3 n, float3 p )
     return make_float4( n, d );
 }
 
-void createRaymarchingGeometry()
+void createRaymarchingGeometryScene1()
 {
     const char *ptx = sutil::getPtxString( SAMPLE_NAME, "box.cu" );
     Program box_bounds    = context->createProgramFromPTXString( ptx, "box_bounds" );
@@ -737,7 +737,7 @@ int main( int argc, char** argv )
         tutorial_ptx = sutil::getPtxString( SAMPLE_NAME, tutorial_ptx_path.c_str() );
 
         createContext();
-        createRaymarchingGeometry();
+        createRaymarchingGeometryScene1();
         setupCamera();
         setupLights();
 

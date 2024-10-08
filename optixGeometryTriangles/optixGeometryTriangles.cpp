@@ -106,7 +106,7 @@ void destroyContext();
 void registerExitHandler();
 void createContext();
 void createMaterials();
-GeometryGroup createRaymarchingGeometry();
+GeometryGroup createRaymarchingGeometryScene1();
 GeometryGroup createStaticGeometry();
 void setupScene();
 void setupCamera();
@@ -407,7 +407,7 @@ GeometryGroup createStaticGeometry()
 }
 
 
-GeometryGroup createRaymarchingGeometry()
+GeometryGroup createRaymarchingGeometryScene1()
 {
     // Sphere geometry
     Geometry sphere = context->createGeometry();
@@ -460,7 +460,7 @@ void setupScene()
     // Create a GeometryGroup for the GeometryTriangles instances and a separate
     // GeometryGroup for all other primitives.
     GeometryGroup tri_gg = createStaticGeometry();
-    GeometryGroup gg     = createRaymarchingGeometry();
+    GeometryGroup gg     = createRaymarchingGeometryScene1();
 
     // Create a top-level Group to contain the two GeometryGroups.
     Group top_group = context->createGroup();

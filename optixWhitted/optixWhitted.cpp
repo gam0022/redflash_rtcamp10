@@ -93,7 +93,7 @@ Buffer getOutputBuffer();
 void destroyContext();
 void registerExitHandler();
 void createContext();
-void createRaymarchingGeometry();
+void createRaymarchingGeometryScene1();
 void setupCamera();
 void setupLights();
 void updateCamera();
@@ -180,7 +180,7 @@ void createContext()
 }
 
 
-void createRaymarchingGeometry()
+void createRaymarchingGeometryScene1()
 {
     // Create glass sphere geometry
     Geometry glass_sphere = context->createGeometry();
@@ -578,7 +578,7 @@ int main( int argc, char** argv )
 #endif
 
         createContext();
-        createRaymarchingGeometry();
+        createRaymarchingGeometryScene1();
         setupCamera();
         setupLights();
 

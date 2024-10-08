@@ -349,7 +349,7 @@ void registerExitHandler()
 #endif
 }
 
-GeometryInstance createRaymrachingObject(const float3& center, const float3& bounds_size)
+GeometryInstance createRaymrachingObject(const float3& center, const float3& bounds_size, RaymarchingMapType mapType)
 {
     Geometry raymarching = context->createGeometry();
     raymarching->setPrimitiveCount(1u);
@@ -359,6 +359,7 @@ GeometryInstance createRaymrachingObject(const float3& center, const float3& bou
     raymarching["center"]->setFloat(center);
     raymarching["aabb_min"]->setFloat(center - bounds_size * 0.5f);
     raymarching["aabb_max"]->setFloat(center + bounds_size * 0.5f);
+    raymarching["map_id"]->setInt(mapType);
 
     GeometryInstance gi = context->createGeometryInstance();
     gi->setGeometry(raymarching);
@@ -484,10 +485,29 @@ void setupBSDF(std::vector<std::string>& bsdf_paths)
     }
 }
 
+void setupRaymarchingMapProgram(const char* ptx)
+{
+    std::string prefix = "RaymarchingMap_";
+    std::vector<std::string> prg_names = { "Ball", "Tower" };
+    int prg_count = prg_names.size();
+
+    optix::Buffer buffer_RaymarchingMap_prgs = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, prg_count);
+    int* RaymarchingMap_prgs = (int*)buffer_RaymarchingMap_prgs->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
+
+    for (int i = 0; i < prg_count; ++i)
+    {
+        Program prg = context->createProgramFromPTXString(ptx, prefix + prg_names[i]);
+        RaymarchingMap_prgs[i] = prg->getId();
+    }
+
+    buffer_RaymarchingMap_prgs->unmap();
+    context["prgs_RaymarchingMap"]->setBuffer(buffer_RaymarchingMap_prgs);
+}
+
 void setupMaterialAnimationProgram(const char* ptx)
 {
     std::string prefix = "materialAnimation_";
-    std::vector<std::string> prg_names = { "Nop", "Raymarching" };
+    std::vector<std::string> prg_names = { "Nop", "Raymarching", "Laser" };
     int prg_count = prg_names.size();
 
     optix::Buffer buffer_MaterialAnimation_prgs = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, prg_count);
@@ -572,6 +592,7 @@ void createContext()
     ptx = sutil::getPtxString(SAMPLE_NAME, "intersect_raymarching.cu");
     pgram_bounding_box_raymarching = context->createProgramFromPTXString(ptx, "bounds");
     pgram_intersection_raymarching = context->createProgramFromPTXString(ptx, "intersect");
+    setupRaymarchingMapProgram(ptx);
 
     // Material Custom Program
     setupMaterialAnimationProgram(ptx);
@@ -644,10 +665,14 @@ void setupPostprocessing()
 void registerMaterial(GeometryInstance& gi, MaterialParameter& mat,
     MaterialAnimationProgramType material_animation_program_id = MaterialAnimationProgramType::Nop, bool isLight = false, bool isReuse = false)
 {
-    materialParameters.push_back(mat);
+    if (!isReuse)
+    {
+        materialParameters.push_back(mat);
+    }
+
     gi->setMaterialCount(1);
     gi->setMaterial(0, isLight ? light_material : common_material);
-    gi["material_id"]->setInt(isReuse ? materialCount : materialCount++);
+    gi["material_id"]->setInt(isReuse ? materialCount - 1 : materialCount++);
     gi["bsdf_id"]->setInt(mat.bsdf);
     gi["material_animation_program_id"]->setInt(material_animation_program_id);
 }
@@ -721,7 +746,6 @@ GeometryGroup createStaticGeometryScene0()
     // Mesh Room
     std::string mesh_file = resolveDataPath("mesh/room.obj");
     gis.push_back(createMesh(mesh_file, make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f)));
-    mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.8f;
     mat.roughness = 0.05f;
@@ -742,7 +766,6 @@ Group createDynamicGeometryScene0()
     // Mesh door_base
     std::string mesh_file = resolveDataPath("mesh/door_base.obj");
     Transform door_base = createDynamicMesh(mesh_file, make_float3(-0.42f, 0.0f, -0.4f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
-    mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
     mat.metallic = 0.05f;
     mat.roughness = 0.95f;
@@ -784,10 +807,15 @@ Group createDynamicGeometryScene0()
         }
     }
 
+    for (auto transform = dynamic_scene0_transforms.begin(); transform != dynamic_scene0_transforms.end(); ++transform)
+    {
+        // group->addChild(transform);
+    }
+
     return group;
 }
 
-GeometryGroup createRaymarchingGeometry()
+GeometryGroup createRaymarchingGeometryScene1()
 {
     MaterialParameter mat;
 
@@ -796,11 +824,12 @@ GeometryGroup createRaymarchingGeometry()
     // Raymarcing
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f, 10.0f, 0.0f),
-        make_float3(2000.0f, 20.0f, 2000.0f)));
-    mat.albedo = make_float3(0.6f);
-    mat.metallic = 0.8f;
-    mat.roughness = 0.05f;
-    registerMaterial(gis.back(), mat, MaterialAnimationProgramType::Raymarching);
+        make_float3(2000.0f, 20.0f, 2000.0f),
+        Tower));
+    mat.albedo = make_float3(0.7);
+    mat.metallic = 0.1f;
+    mat.roughness = 0.7f;
+    registerMaterial(gis.back(), mat);
 
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
     gg->setAcceleration(context->createAcceleration("Trbvh"));
@@ -898,15 +927,14 @@ void updateGeometryLight(float time)
 void setupScene()
 {
     GeometryGroup static_common_gg = createStaticGeometryCommon();
-    GeometryGroup raymarching_gg = createRaymarchingGeometry();
     light_group = createGeometryLight();
 
     // Scene0
     GeometryGroup static_scene0_gg = createStaticGeometryScene0();
     dynamic_scene0_group = createDynamicGeometryScene0();
+    
     top_object_scene0 = context->createGroup();
     top_object_scene0->setAcceleration(context->createAcceleration("Trbvh"));
-    // top_object_scene0->addChild(raymarching_gg);
     top_object_scene0->addChild(static_common_gg);
     top_object_scene0->addChild(static_scene0_gg);
     top_object_scene0->addChild(dynamic_scene0_group);
@@ -914,9 +942,11 @@ void setupScene()
     context["top_object_scene0"]->set(top_object_scene0);
 
     // Scene1
+    GeometryGroup raymarching_scene1_gg = createRaymarchingGeometryScene1();
+
     top_object_scene1 = context->createGroup();
     top_object_scene1->setAcceleration(context->createAcceleration("Trbvh"));
-    top_object_scene1->addChild(raymarching_gg);
+    top_object_scene1->addChild(raymarching_scene1_gg);
     top_object_scene1->addChild(static_common_gg);
     top_object_scene1->addChild(light_group);
     context["top_object_scene1"]->set(top_object_scene1);

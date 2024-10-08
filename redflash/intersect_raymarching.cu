@@ -23,6 +23,9 @@ rtDeclareVariable(float3, texcoord, attribute texcoord, );
 // プライマリレイのDepthを利用した高速化用
 rtDeclareVariable(PerRayData_pathtrace, current_prd, rtPayload, );
 
+rtDeclareVariable(int, map_id, , );
+rtBuffer< rtCallableProgramId<float4(float3 pos, int scene_id)> > prgs_RaymarchingMap;
+
 static __forceinline__ __device__ float3 abs_float3(float3 v)
 {
     return make_float3(abs(v.x), abs(v.y), abs(v.z));
@@ -317,66 +320,67 @@ float sdTowers(float3 pos)
     return d;
 }
 
-float4 map_id(float3 pos, int scene_id)
+float4 ifs_test(float3 pos, int scene_id)
 {
     float4 m0 = make_float4(100, 0, 0, 0);
-
     float beatPhase = phase(time);
 
-    if (scene_id == 0)
+    int _IFS_Iteration = 3;
+    float3 _IFS_Rot = make_float3(0.8, 0.6, 0.7);
+    float3 _IFS_Offset = make_float3(0.89, 2.21, 0.53);
+    float3 _opRep = make_float3(20, 10, 20);
+
+    float3 p1 = opRep(pos, _opRep);
+    p1 -= _IFS_Offset;
+
+    for (int i = 0; i < _IFS_Iteration; i++)
     {
-        // Floor
-        // float4 m_floor = make_float4(pos.y, M_Floor, 0, 0);
-        // opUnion(m0, m_floor);
+        p1 = abs_float3(p1 + _IFS_Offset) - _IFS_Offset;
 
-        int _IFS_Iteration = 3;
-        float3 _IFS_Rot = make_float3(0.8, 0.6, 0.7);
-        float3 _IFS_Offset = make_float3(0.89, 2.21, 0.53);
-        float3 _opRep = make_float3(20, 10, 20);
+        float2 p1_xz = make_float2(p1.x, p1.z);
+        rot(p1_xz, TAU * _IFS_Rot.x);
+        p1.x = p1_xz.x;
+        p1.z = p1_xz.y;
 
-        float3 p1 = opRep(pos, _opRep);
-        p1 -= _IFS_Offset;
+        float2 p1_zy = make_float2(p1.z, p1.y);
+        rot(p1_zy, TAU * _IFS_Rot.y);
+        p1.z = p1_zy.x;
+        p1.y = p1_zy.y;
 
-        for (int i = 0; i < _IFS_Iteration; i++)
-        {
-            p1 = abs_float3(p1 + _IFS_Offset) - _IFS_Offset;
-
-            float2 p1_xz = make_float2(p1.x, p1.z);
-            rot(p1_xz, TAU * _IFS_Rot.x);
-            p1.x = p1_xz.x;
-            p1.z = p1_xz.y;
-
-            float2 p1_zy = make_float2(p1.z, p1.y);
-            rot(p1_zy, TAU * _IFS_Rot.y);
-            p1.z = p1_zy.x;
-            p1.y = p1_zy.y;
-
-            float2 p1_xy = make_float2(p1.x, p1.y);
-            rot(p1_xy, TAU * _IFS_Rot.z + beatPhase / 2.3);
-            p1.x = p1_xy.x;
-            p1.y = p1_xy.y;
-        }
-
-        float4 m_base = make_float4(dBox(p1, make_float3(1, 0.5, 0.5)), M_IFS_Base, 0, 0);
-        float4 m_emissive = make_float4(dBox(p1, make_float3(1.1, 0.6, 0.1)), M_IFS_Emissive, 0, 0);
-
-        opUnion(m0, m_base);
-        opUnion(m0, m_emissive);
-    }
-    else if (scene_id == 1)
-    {
-        float s = 8;
-        float3 p = pos / s - make_float3(0, -2, 0);
-        float d = sdTowers(p) * s;
-        m0 = make_float4(d, M_Towers, 0, 0);
+        float2 p1_xy = make_float2(p1.x, p1.y);
+        rot(p1_xy, TAU * _IFS_Rot.z + beatPhase / 2.3);
+        p1.x = p1_xy.x;
+        p1.y = p1_xy.y;
     }
 
+    float4 m_base = make_float4(dBox(p1, make_float3(1, 0.5, 0.5)), M_IFS_Base, 0, 0);
+    float4 m_emissive = make_float4(dBox(p1, make_float3(1.1, 0.6, 0.1)), M_IFS_Emissive, 0, 0);
+
+    opUnion(m0, m_base);
+    opUnion(m0, m_emissive);
+    return m0;
+}
+
+RT_CALLABLE_PROGRAM float4 RaymarchingMap_Ball(float3 pos, int scene_id)
+{
+    float3 p = pos - center;
+    float d = length(p) - 1;
+    float4 m0 = make_float4(d, M_Towers, 0, 0);
+    return m0;
+}
+
+RT_CALLABLE_PROGRAM float4 RaymarchingMap_Tower(float3 pos, int scene_id)
+{
+    float scale = 8;
+    float3 p = pos / scale - make_float3(0, -2, 0);
+    float d = sdTowers(p) * scale;
+    float4 m0 = make_float4(d, M_Towers, 0, 0);
     return m0;
 }
 
 float map(float3 pos, int scene_id)
 {
-    return map_id(pos, scene_id).x;
+    return prgs_RaymarchingMap[map_id](pos, scene_id).x;
 }
 
 #define calcNormal(p, dFunc, eps, scene_id) normalize(\
@@ -421,7 +425,7 @@ RT_CALLABLE_PROGRAM void materialAnimation_Nop(MaterialParameter& mat, State& st
 RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, State& state, int scene_id)
 {
     float3 p = state.hitpoint;
-    float4 m = map_id(p, scene_id);
+    float4 m = prgs_RaymarchingMap[map_id](p, scene_id);
     uint id = uint(m.y);
 
     if (id == M_Floor)
@@ -451,6 +455,15 @@ RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, S
         mat.roughness = 0.7;
         mat.metallic = 0.1;
     }
+
+    mat.albedo = make_float3(0.7, 0.7, 0.7);
+    mat.roughness = 0.7;
+    mat.metallic = 0.1;
+}
+
+RT_CALLABLE_PROGRAM void materialAnimation_Laser(MaterialParameter& mat, State& state, int scene_id)
+{
+    float3 p = state.hitpoint;
 }
 
 RT_PROGRAM void intersect(int primIdx)
