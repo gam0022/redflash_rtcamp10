@@ -1069,6 +1069,7 @@ void updateFrame(float time)
         {
             t = time - 4;
             // ターゲットを追従し、ターゲットと一緒に次の世界に移動
+            eye_shake.z = 0;
             camera_eye = make_float3(0.0f, 1.1, -1 + t) + eye_shake;
             camera_lookat = ball_center;
         }
@@ -1110,7 +1111,7 @@ void updateFrame(float time)
         // ドアの開閉
         float rad = TAU * easeInOutCubic(clamp(time - 2, 0.0, 2.0) / 2.0f) * 0.4;
         // rad = TAU * 2 / 5 * clamp(sin(time * TAU / 5), 0.0f, 1.0f);
-        Matrix4x4 mat = createMatrix(make_float3(-0.42, 0.0, 0.03), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
+        Matrix4x4 mat = createMatrix(make_float3(-0.42, 0.0, -0.03), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
         dynamic_scene0_transforms[0]->setMatrix(false, mat.getData(), false);
         dynamic_scene0_transforms[1]->setMatrix(false, mat.getData(), false);
 

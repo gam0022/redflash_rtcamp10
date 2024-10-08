@@ -349,7 +349,7 @@ float heightOcean(float2 position, int iterations, float frequency)
 {
     float wavePhaseShift = length(position) * 0.1; // this is to avoid every octave having exactly the same phase everywhere
     float iter = 0.0; // this will help generating well distributed wave directions
-    // float frequency = 3.0; // frequency of the wave, this will change every iteration
+    // float frequency = 1.0; // frequency of the wave, this will change every iteration
     float timeMultiplier = 2.0; // time multiplier for the wave, this will change every iteration
     float weight = 1.0;// weight in final sum for the wave, this will change every iteration
     float sumOfValues = 0.0; // will store final sum of values
