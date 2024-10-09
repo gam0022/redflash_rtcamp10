@@ -1119,8 +1119,14 @@ static void getCuStringFromFile( std::string &cu, std::string& location, const c
     source_locations.push_back(fs::current_path().string() + "/" + filename);
     source_locations.push_back(fs::current_path().string() + "/cuda/" + filename);
 
-    if( sample_name )
-        source_locations.push_back( base_dir + "/" + sample_name + "/" + filename );
+    if (sample_name)
+    {
+        // 絶対パス指定は提出時のアセット漏れの原因になるのでコメントアウト
+        // source_locations.push_back( base_dir + "/" + sample_name + "/" + filename );
+
+        // Visual Studioで実行したときの相対パス
+        source_locations.push_back(fs::current_path().string() + "/../../" + sample_name + "/" + filename);
+    }
 
     std::string cuda_dir = std::string( sutil::samplesCUDADir() );
     source_locations.push_back( cuda_dir + "/" + filename );
