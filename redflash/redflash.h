@@ -22,6 +22,7 @@ enum BSDFType
 {
     DIFFUSE,
     DISNEY,
+    GLASS,
     PORTAL
 };
 
@@ -56,6 +57,7 @@ struct MaterialParameter
         sheenTint = 0.5f;
         clearcoat = 0.0f;
         clearcoatGloss = 1.0f;
+        eta = 1.45;
         bsdf = DISNEY;
         albedoID = RT_TEXTURE_ID_NULL;
     }
@@ -73,6 +75,7 @@ struct MaterialParameter
     float sheenTint;
     float clearcoat;
     float clearcoatGloss;
+    float eta;
     BSDFType bsdf;
 };
 

@@ -626,7 +626,7 @@ void createContext()
     pgram_intersection_sphere = context->createProgramFromPTXString(ptx, "sphere_intersect");
 
     // BSDF
-    std::vector<std::string> bsdf_paths{ "bsdf_diffuse.cu", "bsdf_disney.cu", "bsdf_portal.cu" };
+    std::vector<std::string> bsdf_paths{ "bsdf_diffuse.cu", "bsdf_disney.cu", "bsdf_glass.cu", "bsdf_portal.cu" };
     setupBSDF(bsdf_paths);
 }
 
@@ -787,9 +787,12 @@ GeometryGroup createStaticGeometryScene1()
     // Mesh Ocean
     std::string mesh_file = resolveDataPath("mesh/plane.obj");
     gis.push_back(createMesh(mesh_file, make_float3(0.0f, -8.0f, 0.0f), make_float3(10000.0f, 1.0f, 10000.0f)));
+    mat.bsdf = GLASS;
     mat.albedo = make_float3(0.2, 0.2, 0.7);
+    // mat.albedo = make_float3(1.0);
     mat.metallic = 1.0;
     mat.roughness = 0.0;
+    mat.eta = 1.0;
     registerMaterial(gis.back(), mat, Ocean);
 
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
@@ -816,15 +819,16 @@ Group createDynamicGeometryScene0()
     // Mesh door_glass
     mesh_file = resolveDataPath("mesh/door_glass.obj");
     Transform door_glass = createDynamicMesh(mesh_file, make_float3(-0.42f, 0.0f, -0.4f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
-    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
-    mat.metallic = 0.15f;
-    mat.roughness = 0.01f;
+    mat.bsdf = GLASS;
+    mat.albedo = make_float3(1.0f);
+    mat.eta = 1.4;
     registerMaterial(dynamic_scene0_gis.back(), mat);
     group->addChild(door_glass);
 
     // Mesh door_handle
     mesh_file = resolveDataPath("mesh/door_handle.obj");
     Transform door_handle = createDynamicMesh(mesh_file, make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
+    mat.bsdf = DISNEY;
     mat.albedo = make_float3(1.0f, 0.4f, 0.6f);
     mat.metallic = 0.05f;
     mat.roughness = 0.95f;
@@ -1147,7 +1151,10 @@ void updateFrame(float time)
         // rad = TAU * 2 / 5 * clamp(sin(time * TAU / 5), 0.0f, 1.0f);
         Matrix4x4 mat = createMatrix(make_float3(-0.42, 0.0, -0.03), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
         dynamic_scene0_transforms[0]->setMatrix(false, mat.getData(), false);
-        dynamic_scene0_transforms[1]->setMatrix(false, mat.getData(), false);
+
+        Matrix4x4 mat_glass = createMatrix(make_float3(0.0f, 0.0f, -0.02f), make_float3(1.0f));
+        mat_glass = mat * mat_glass;
+        dynamic_scene0_transforms[1]->setMatrix(false, mat_glass.getData(), false);
 
         Matrix4x4 mat_handle = createMatrix(make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 0.0f, 1.0f), time * 0.1 * TAU);
         mat_handle = mat * mat_handle;

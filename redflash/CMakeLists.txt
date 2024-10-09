@@ -42,6 +42,7 @@ if(GLUT_FOUND AND OPENGL_FOUND)
 
         bsdf_diffuse.cu
         bsdf_disney.cu
+        bsdf_glass.cu
         bsdf_portal.cu
 
         # These files are common among multiple samples
