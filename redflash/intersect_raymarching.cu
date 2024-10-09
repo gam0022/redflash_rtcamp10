@@ -26,6 +26,7 @@ rtDeclareVariable(PerRayData_pathtrace, current_prd, rtPayload, );
 rtDeclareVariable(int, map_id, , );
 rtBuffer< rtCallableProgramId<float4(float3 pos, int scene_id)> > prgs_RaymarchingMap;
 rtDeclareVariable(float3, ball_center, , );
+rtDeclareVariable(float3, mandelBox_center, , );
 
 static __forceinline__ __device__ float3 abs_float3(float3 v)
 {
@@ -147,12 +148,12 @@ float dMandelFast(float3 p, float scale, int n) {
     return length(get_xyz(q)) / abs(q.w);
 }
 
-float fracf(float x)
+float fract(float x)
 {
     return x - floor(x);
 }
 
-float3 fracf(float3 v)
+float3 fract(float3 v)
 {
     v.x = v.x - floor(v.x);
     v.y = v.y - floor(v.y);
@@ -163,7 +164,7 @@ float3 fracf(float3 v)
 
 float mod(float a, float b)
 {
-    return fracf(abs(a / b)) * abs(b);
+    return fract(abs(a / b)) * abs(b);
 }
 
 float opRep(float p, float interval)
@@ -317,9 +318,9 @@ float4 map_id_rtcamp9(float3 pos, int scene_id)
 
 float hash12(float2 p)
 {
-    float3 p3 = fracf(make_float3(p.x, p.y, p.x) * .1031);
+    float3 p3 = fract(make_float3(p.x, p.y, p.x) * .1031);
     p3 = p3 + dot(p3, make_float3(p3.y, p3.z, p3.x) + 33.33);
-    return fracf((p3.x + p3.y) * p3.z);
+    return fract((p3.x + p3.y) * p3.z);
 }
 
 float sdTowers(float3 pos)
@@ -475,6 +476,15 @@ RT_CALLABLE_PROGRAM float4 RaymarchingMap_Ocean(float3 pos, int scene_id)
     return m0;
 }
 
+RT_CALLABLE_PROGRAM float4 RaymarchingMap_MandelBox(float3 pos, int scene_id)
+{
+    float scale = 4;
+    float3 p = (pos - make_float3(0.0f, 30.0f, 40.0f)) / scale;
+    float d = dMandelFast(p, 2.7 + 0.2 * sin(time), 20) * scale;
+    float4 m0 = make_float4(d, M_Default, 0, 0);
+    return m0;
+}
+
 float map(float3 pos, int scene_id)
 {
     return prgs_RaymarchingMap[map_id](pos, scene_id).x;
@@ -519,35 +529,12 @@ RT_CALLABLE_PROGRAM void materialAnimation_Nop(MaterialParameter& mat, State& st
     // nop
 }
 
-RT_CALLABLE_PROGRAM void materialAnimation_Raymarching(MaterialParameter& mat, State& state, int scene_id)
-{
-    float3 p = state.hitpoint;
-    float4 m = prgs_RaymarchingMap[map_id](p, scene_id);
-    uint id = uint(m.y);
-
-    if (id == M_IFS_Base)
-    {
-        mat.albedo = make_float3(0.2, 0.2, 0.2);
-        mat.roughness = 0.05;
-        mat.metallic = 0.8;
-    }
-    else if (id == M_IFS_Emissive)
-    {
-        mat.albedo = make_float3(1.0, 1.0, 1.0);
-        mat.roughness = 0.6;
-        mat.metallic = 0.2;
-
-        float a = saturate(cos((-p.z / 256 + time) * TAU));
-        mat.emission += make_float3(0.2, 0.2, 4) * a;
-    }
-}
-
 RT_CALLABLE_PROGRAM void materialAnimation_Laser(MaterialParameter& mat, State& state, int scene_id)
 {
     float3 p = state.hitpoint;
     float x = smoothstep(0.0, 0.5, time);
     float y = smoothstep(1.0, 2.0, time);
-    mat.emission = lerp(make_float3(0.1, 0.1, 1.0), pal(mod(p.z * 0.4 + time * 2, 1)), y) * x;
+    mat.emission = lerp(make_float3(0.1, 0.1, 1.0), pal(fract(p.z * 0.4 + time * 2)), y) * x;
 }
 
 RT_CALLABLE_PROGRAM void materialAnimation_Ocean(MaterialParameter& mat, State& state, int scene_id)
@@ -569,6 +556,23 @@ RT_CALLABLE_PROGRAM void materialAnimation_Ocean(MaterialParameter& mat, State& 
 
     state.normal = n;
     state.ffnormal = n;
+}
+
+RT_CALLABLE_PROGRAM void materialAnimation_Tower(MaterialParameter& mat, State& state, int scene_id)
+{
+    float3 p = state.hitpoint;
+    float3 green = make_float3(107, 142, 35) / 255.0;
+    float3 brown = make_float3(180, 83, 60) / 255.;
+    float2 rep = make_float2(3, 3) * 8;
+    float2 grid = floor(make_float2(p.x, p.z) / rep);
+    mat.albedo = lerp(green, brown, hash12(grid * 0.1));
+}
+
+RT_CALLABLE_PROGRAM void materialAnimation_MandelBox(MaterialParameter& mat, State& state, int scene_id)
+{
+    float3 p = state.hitpoint;
+    p -= mandelBox_center;
+    mat.albedo = pal(fract(time / 2 + length(p) * 0.09));
 }
 
 RT_PROGRAM void intersect(int primIdx)

@@ -29,16 +29,18 @@ enum BSDFType
 enum MaterialAnimationProgramType
 {
     Nop,
-    Raymarching,
     Laser,
-    Ocean
+    Ocean,
+    Tower,
+    MandelBox
 };
 
 enum RaymarchingMapType
 {
-    Ball,
-    Tower,
-    OceanMap
+    dBall,
+    dTower,
+    dOcean,
+    dMandelBox,
 };
 
 struct MaterialParameter

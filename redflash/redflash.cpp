@@ -196,6 +196,8 @@ std::vector<GeometryInstance > dynamic_scene0_gis;
 float3 ball_center;
 Geometry ball_g;
 
+float3 mandelBox_center;
+
 // WASD移動
 bool is_key_W_pressed = false;
 bool is_key_A_pressed = false;
@@ -377,7 +379,7 @@ GeometryInstance createRaymrachingObject(const float3& center, const float3& bou
     raymarching["aabb_max"]->setFloat(center + bounds_size * 0.5f);
     raymarching["map_id"]->setInt(mapType);
 
-    if (mapType == Ball)
+    if (mapType == dBall)
     {
         ball_g = raymarching;
         context["ball_center"]->setFloat(center);
@@ -510,7 +512,7 @@ void setupBSDF(std::vector<std::string>& bsdf_paths)
 void setupRaymarchingMapProgram(const char* ptx)
 {
     std::string prefix = "RaymarchingMap_";
-    std::vector<std::string> prg_names = { "Ball", "Tower", "Ocean"};
+    std::vector<std::string> prg_names = { "Ball", "Tower", "Ocean", "MandelBox"};
     int prg_count = prg_names.size();
 
     optix::Buffer buffer_RaymarchingMap_prgs = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, prg_count);
@@ -529,7 +531,7 @@ void setupRaymarchingMapProgram(const char* ptx)
 void setupMaterialAnimationProgram(const char* ptx)
 {
     std::string prefix = "materialAnimation_";
-    std::vector<std::string> prg_names = { "Nop", "Raymarching", "Laser", "Ocean"};
+    std::vector<std::string> prg_names = { "Nop", "Laser", "Ocean", "Tower", "MandelBox"};
     int prg_count = prg_names.size();
 
     optix::Buffer buffer_MaterialAnimation_prgs = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, prg_count);
@@ -778,7 +780,7 @@ GeometryGroup createStaticGeometryScene0()
     // Mesh Monkey
     mesh_file = resolveDataPath("mesh/monkey.obj");
     gis.push_back(createMesh(mesh_file, make_float3(0.0f, 1.0f, 5.0f), make_float3(1.0f), make_float3(0, 1, 0), TAU * 0.5));
-    mat.albedo = make_float3(236.0 / 255.0, 176.0 / 255.0, 0.0);
+    mat.albedo = make_float3(236.0, 176.0, 0.0) / 255.0;
     mat.metallic = 0.8f;
     mat.roughness = 0.0f;
     registerMaterial(gis.back(), mat);
@@ -837,9 +839,9 @@ Group createDynamicGeometryScene0()
     mesh_file = resolveDataPath("mesh/door_handle.obj");
     Transform door_handle = createDynamicMesh(mesh_file, make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
     mat.bsdf = DISNEY;
-    mat.albedo = make_float3(1.0f, 0.4f, 0.6f);
-    mat.metallic = 0.05f;
-    mat.roughness = 0.95f;
+    mat.albedo = make_float3(236.0, 176.0, 0.0) / 255.0;
+    mat.metallic = 0.95f;
+    mat.roughness = 0.01f;
     registerMaterial(dynamic_scene0_gis.back(), mat);
     group->addChild(door_handle);
 
@@ -879,7 +881,7 @@ GeometryGroup createRaymarchingGeometryCommon()
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f, 1.0, -4),
         make_float3(0.5f),
-        Ball));
+        dBall));
     mat.albedo = make_float3(1.0);
     mat.metallic = 1.0;
     mat.roughness = 0.0;
@@ -900,11 +902,23 @@ GeometryGroup createRaymarchingGeometryScene1()
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f, -2.0f, 0.0f),
         make_float3(10000.0f, 36.0f, 10000.0f),
-        Tower));
+        dTower));
     mat.albedo = make_float3(107 / 255.0, 142 / 255.0, 35 / 255.0);
     mat.metallic = 0.8f;
     mat.roughness = 0.05f;
-    registerMaterial(gis.back(), mat);
+    registerMaterial(gis.back(), mat, Tower);
+
+    // Large MandelBox
+    mandelBox_center = make_float3(0.0f, 30.0f, 40.0f);
+    gis.push_back(createRaymrachingObject(
+        mandelBox_center,
+        make_float3(40.0),
+        dMandelBox));
+    mat.albedo = make_float3(0.6);
+    mat.metallic = 0.8f;
+    mat.roughness = 0.05f;
+    registerMaterial(gis.back(), mat, MandelBox);
+    context["mandelBox_center"]->setFloat(mandelBox_center);
 
     // Raymarcing Ocean
     /*
@@ -1118,31 +1132,31 @@ void updateFrame(float time)
             camera_eye = make_float3(0.0f, 1.1, -1 + t) + eye_shake;
             camera_lookat = ball_center;
         }
-        else if (time < 8)
+        else if (time < 7)
         {
             // 外の世界からターゲットを追尾するカメラ
-            float3 e0 = make_float3(0.5f, 1.2, 2.0) + eye_shake;
-            float3 t0 = ball_center;
-
-            // 外の世界からターゲットを俯瞰するカメラ
-            float3 e1 = make_float3(3.0, 1.2, 3.0) + eye_shake;
-            float3 t1 = make_float3(0, 1, 2);
-
-            float x = smoothstep(7, 8, time);
-            camera_eye = lerp(e0, e1, x);
-            camera_lookat = lerp(t0, t1, x);
+            camera_eye = make_float3(0.5f, 1.2, 2.0) + eye_shake;
+            camera_lookat = ball_center;
+        }
+        else if (time < 9)
+        {
+            t = time - 7;
+            float e = easeInOutCubic(t / 2);
+            // 外の世界をを見せるカメラ
+            // 海の下からの上昇、MandelBoxを見上げる
+            camera_eye = make_float3(24.0f, -10.0 + 5 * e, 24.0) + eye_shake;
+            camera_fov = lerp(30, 90, e);
+            float3 t0 = make_float3(0, 1.0f, 0);
+            camera_lookat = lerp(t0, mandelBox_center, e);
         }
         else if (time < 10)
         {
-            t = time - 8;
-            float e = easeInOutCubic(t / 2);
-            // 外の世界をじっくり見せるカメラ
-            camera_eye = make_float3(24.0f, 1.8 + 200 * e, 24.0 + 40.0 * e) + eye_shake;
+            t = time - 9;
+            // MandelBox俯瞰視点
+            float e = easeInOutCubic(t);
+            camera_eye = make_float3(0.0f, 30 + 4 * e, -e * 20) + eye_shake;
             camera_fov = lerp(30, 90, e);
-
-            t = saturate(time - 9);
-            e = easeInOutCubic(t);
-            camera_lookat = make_float3(100 * e, 1.0f + 100 * e, -100 * e);
+            camera_lookat = mandelBox_center;
         }
 
         if (time >= 5)
