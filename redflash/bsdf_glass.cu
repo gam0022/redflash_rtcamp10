@@ -60,16 +60,6 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
         prd.origin = state.hitpoint - normal * scene_epsilon * 10.0;
         prd.direction = w_t;
     }
-
-    /*
-    float3 dir = -prd.wo;
-
-    // 板ポリを突き抜けるようなレイを生成
-    prd.origin = state.hitpoint + dir * 0.01f;
-
-    // レイの方向は維持する
-    prd.direction = dir;
-    */
 }
 
 RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData_pathtrace &prd)

@@ -311,9 +311,9 @@ float sdTowers(float3 pos)
     float s = 1;
     float d;
 
-    // p.xz *= rotate2D(t * .2);
     float2 rep = make_float2(3, 3);
     float3 p = opRepXZ(pos, rep);
+    // p = opRep(pos + make_float3(0, 4, 0), make_float3(3, 8, 3));
 
     float2 grid = floor(make_float2(pos.x, pos.z) / rep);
     float height = 3.2;

@@ -718,6 +718,7 @@ void updateMaterialParameters()
         dst->sheenTint = mat.sheenTint;
         dst->clearcoat = mat.clearcoat;
         dst->clearcoatGloss = mat.clearcoatGloss;
+        dst->eta = mat.eta;
         dst->bsdf = mat.bsdf;
         dst->albedoID = mat.albedoID;
     }
@@ -756,6 +757,14 @@ GeometryGroup createStaticGeometryCommon()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
+    // Mesh Monkey
+    mesh_file = resolveDataPath("mesh/monkey.obj");
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f, -8.0f, 8.0f), make_float3(3.0f), make_float3(0, 1, 0), TAU * 0.5));
+    mat.bsdf = DISNEY;
+    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
+    mat.eta = 1.45f;
+    registerMaterial(gis.back(), mat);
+
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
     gg->setAcceleration(context->createAcceleration("Trbvh"));
     return gg;
@@ -774,6 +783,14 @@ GeometryGroup createStaticGeometryScene0()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
+    // Mesh Monkey
+    mesh_file = resolveDataPath("mesh/monkey.obj");
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 1.0f, 8.0f), make_float3(1.0f), make_float3(0, 1, 0), TAU * 0.5));
+    mat.bsdf = GLASS;
+    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
+    mat.eta = 1.45f;
+    registerMaterial(gis.back(), mat);
+
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
     gg->setAcceleration(context->createAcceleration("Trbvh"));
     return gg;
@@ -789,10 +806,9 @@ GeometryGroup createStaticGeometryScene1()
     gis.push_back(createMesh(mesh_file, make_float3(0.0f, -8.0f, 0.0f), make_float3(10000.0f, 1.0f, 10000.0f)));
     mat.bsdf = GLASS;
     mat.albedo = make_float3(0.2, 0.2, 0.7);
-    // mat.albedo = make_float3(1.0);
     mat.metallic = 1.0;
     mat.roughness = 0.0;
-    mat.eta = 1.0;
+    mat.eta = 1.1f;;
     registerMaterial(gis.back(), mat, Ocean);
 
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
@@ -890,8 +906,8 @@ GeometryGroup createRaymarchingGeometryScene1()
 
     // Raymarcing Tower
     gis.push_back(createRaymrachingObject(
-        make_float3(0.0f, 10.0f, 0.0f),
-        make_float3(10000.0f, 20.0f, 10000.0f),
+        make_float3(0.0f, 20.0f, 0.0f),
+        make_float3(10000.0f, 40.0f, 10000.0f),
         Tower));
     mat.albedo = make_float3(0.7);
     mat.metallic = 0.1f;
