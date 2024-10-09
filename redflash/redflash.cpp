@@ -797,7 +797,7 @@ GeometryGroup createStaticGeometryScene1()
     std::string mesh_file = resolveDataPath("mesh/plane.obj");
     gis.push_back(createMesh(mesh_file, make_float3(0.0f, -8.0f, 0.0f), make_float3(10000.0f, 1.0f, 10000.0f)));
     mat.bsdf = GLASS;
-    mat.albedo = make_float3(0.2, 0.2, 0.7);
+    mat.albedo = make_float3(10 / 255., 100 / 255., 252 / 255.);
     mat.metallic = 1.0;
     mat.roughness = 0.0;
     mat.eta = 1.1f;;
@@ -901,9 +901,9 @@ GeometryGroup createRaymarchingGeometryScene1()
         make_float3(0.0f, -2.0f, 0.0f),
         make_float3(10000.0f, 36.0f, 10000.0f),
         Tower));
-    mat.albedo = make_float3(0.7);
-    mat.metallic = 0.1f;
-    mat.roughness = 0.7f;
+    mat.albedo = make_float3(107 / 255.0, 142 / 255.0, 35 / 255.0);
+    mat.metallic = 0.8f;
+    mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
     // Raymarcing Ocean

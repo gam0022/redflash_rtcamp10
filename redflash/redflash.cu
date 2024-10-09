@@ -513,7 +513,7 @@ RT_PROGRAM void envmap_miss()
     }
     else if (current_prd.scene_id == 1)
     {
-        current_prd.radiance += make_float3(tex2D(envmap1, u, v)) * current_prd.attenuation * 2.0;
+        current_prd.radiance += make_float3(tex2D(envmap1, u, v)) * current_prd.attenuation * 1.0;
     }
 
     current_prd.albedo = make_float3(0.0f);
