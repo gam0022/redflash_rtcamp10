@@ -577,7 +577,7 @@ RT_CALLABLE_PROGRAM void materialAnimation_MandelBox(MaterialParameter& mat, Sta
     mat.albedo = pal(fract(time / 2 + length(p) * 0.09));
 }
 
-RT_PROGRAM void intersect(int primIdx)
+RT_PROGRAM void intersectLocal(int primIdx)
 {
     float eps;
     float t = ray.tmin, d = 0.0;
@@ -600,7 +600,37 @@ RT_PROGRAM void intersect(int primIdx)
         }
     }
 
-    // if (t < ray.tmax && rtPotentialIntersection(t))
+    if (t < ray.tmax && rtPotentialIntersection(t))
+    {
+        shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon, current_prd.scene_id);
+        texcoord = make_float3(p.x, p.y, 0);
+        rtReportIntersection(0);
+    }
+}
+
+RT_PROGRAM void intersectWorld(int primIdx)
+{
+    float eps;
+    float t = ray.tmin, d = 0.0;
+    float3 p = ray.origin;
+
+    if (current_prd.depth == 0)
+    {
+        t = max(current_prd.distance, t);
+    }
+
+    for (int i = 0; i < raymarching_iteration; i++)
+    {
+        p = ray.origin + t * ray.direction;
+        d = map(p, current_prd.scene_id);
+        t += d;
+        eps = scene_epsilon * t;
+        if (abs(d) < eps || t > ray.tmax)
+        {
+            break;
+        }
+    }
+
     if (abs(d) < eps && rtPotentialIntersection(t))
     {
         shading_normal = geometric_normal = calcNormal(p, map, scene_epsilon, current_prd.scene_id);

@@ -90,8 +90,8 @@ int total_sample = 0;
 // Intersect Programs
 Program pgram_intersection = 0;
 Program pgram_bounding_box = 0;
-Program pgram_intersection_raymarching = 0;
-Program pgram_intersection_raymarching_plane = 0;
+Program pgram_intersection_raymarching_local = 0;
+Program pgram_intersection_raymarching_world = 0;
 Program pgram_bounding_box_raymarching = 0;
 Program pgram_intersection_sphere = 0;
 Program pgram_bounding_box_sphere = 0;
@@ -363,13 +363,13 @@ GeometryInstance createRaymrachingObject(const float3& center, const float3& bou
     Geometry raymarching = context->createGeometry();
     raymarching->setPrimitiveCount(1u);
 
-    if (mapType == Ocean)
+    if (mapType == dTower || mapType == dOcean)
     {
-        raymarching->setIntersectionProgram(pgram_intersection_raymarching_plane);
+        raymarching->setIntersectionProgram(pgram_intersection_raymarching_world);
     }
     else
     {
-        raymarching->setIntersectionProgram(pgram_intersection_raymarching);
+        raymarching->setIntersectionProgram(pgram_intersection_raymarching_local);
     }
 
     raymarching->setBoundingBoxProgram(pgram_bounding_box_raymarching);
@@ -557,7 +557,7 @@ void createContext()
 
     context["scene_id_init"]->setUint(0);
     context["scene_epsilon"]->setFloat(0.001f);
-    context["raymarching_iteration"]->setUint(100);
+    context["raymarching_iteration"]->setUint(200);
     context["useLight"]->setUint(useLight ? 1 : 0);
     // context["rr_begin_depth"]->setUint( rr_begin_depth );
     context["max_depth"]->setUint(max_depth);
@@ -615,8 +615,8 @@ void createContext()
     // Raymarching programs
     ptx = sutil::getPtxString(SAMPLE_NAME, "intersect_raymarching.cu");
     pgram_bounding_box_raymarching = context->createProgramFromPTXString(ptx, "bounds");
-    pgram_intersection_raymarching = context->createProgramFromPTXString(ptx, "intersect");
-    pgram_intersection_raymarching_plane = context->createProgramFromPTXString(ptx, "intersect_Plane");
+    pgram_intersection_raymarching_local = context->createProgramFromPTXString(ptx, "intersectLocal");
+    pgram_intersection_raymarching_world = context->createProgramFromPTXString(ptx, "intersectWorld");
     setupRaymarchingMapProgram(ptx);
 
     // Material Custom Program
