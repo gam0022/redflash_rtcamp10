@@ -906,8 +906,8 @@ GeometryGroup createRaymarchingGeometryScene1()
 
     // Raymarcing Tower
     gis.push_back(createRaymrachingObject(
-        make_float3(0.0f, 20.0f, 0.0f),
-        make_float3(10000.0f, 40.0f, 10000.0f),
+        make_float3(0.0f, -2.0f, 0.0f),
+        make_float3(10000.0f, 36.0f, 10000.0f),
         Tower));
     mat.albedo = make_float3(0.7);
     mat.metallic = 0.1f;
