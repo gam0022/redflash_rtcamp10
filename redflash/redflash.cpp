@@ -757,14 +757,6 @@ GeometryGroup createStaticGeometryCommon()
     mat.roughness = 0.05f;
     registerMaterial(gis.back(), mat);
 
-    // Mesh Monkey
-    mesh_file = resolveDataPath("mesh/monkey.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(0.0f, -8.0f, 8.0f), make_float3(3.0f), make_float3(0, 1, 0), TAU * 0.5));
-    mat.bsdf = DISNEY;
-    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
-    mat.eta = 1.45f;
-    registerMaterial(gis.back(), mat);
-
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
     gg->setAcceleration(context->createAcceleration("Trbvh"));
     return gg;
@@ -785,10 +777,10 @@ GeometryGroup createStaticGeometryScene0()
 
     // Mesh Monkey
     mesh_file = resolveDataPath("mesh/monkey.obj");
-    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 1.0f, 8.0f), make_float3(1.0f), make_float3(0, 1, 0), TAU * 0.5));
-    mat.bsdf = GLASS;
-    mat.albedo = make_float3(1.0f, 1.0f, 1.0f);
-    mat.eta = 1.45f;
+    gis.push_back(createMesh(mesh_file, make_float3(0.0f, 1.0f, 5.0f), make_float3(1.0f), make_float3(0, 1, 0), TAU * 0.5));
+    mat.albedo = make_float3(236.0 / 255.0, 176.0 / 255.0, 0.0);
+    mat.metallic = 0.8f;
+    mat.roughness = 0.0f;
     registerMaterial(gis.back(), mat);
 
     GeometryGroup gg = context->createGeometryGroup(gis.begin(), gis.end());
@@ -1091,7 +1083,6 @@ void updateFrame(float time)
     bool update_camera = true;
 
     bool update_dynamic = true;
-
     float vignetteIntensity = 0.9;
 
     float3 eye_shake = 0.05f * sinFbm3((time - 1) / 10.0);

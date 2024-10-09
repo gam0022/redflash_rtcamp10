@@ -152,6 +152,15 @@ float fracf(float x)
     return x - floor(x);
 }
 
+float3 fracf(float3 v)
+{
+    v.x = v.x - floor(v.x);
+    v.y = v.y - floor(v.y);
+    v.z = v.z - floor(v.z);
+    return v;
+}
+
+
 float mod(float a, float b)
 {
     return fracf(abs(a / b)) * abs(b);
@@ -306,6 +315,13 @@ float4 map_id_rtcamp9(float3 pos, int scene_id)
 
 #define phase(x) (floor(x) + .5 + .5 * cos(TAU * .5 * exp(-5. * mod(x, 1))))
 
+float hash12(float2 p)
+{
+    float3 p3 = fracf(make_float3(p.x, p.y, p.x) * .1031);
+    p3 = p3 + dot(p3, make_float3(p3.y, p3.z, p3.x) + 33.33);
+    return fracf((p3.x + p3.y) * p3.z);
+}
+
 float sdTowers(float3 pos)
 {
     float s = 1;
@@ -316,7 +332,7 @@ float sdTowers(float3 pos)
     // p = opRep(pos + make_float3(0, 4, 0), make_float3(3, 8, 3));
 
     float2 grid = floor(make_float2(pos.x, pos.z) / rep);
-    float height = 3.2;
+    float height = 2.5 + 1.5 * sin(hash12(grid * 0.232) * TAU + time * 0.4);
 
     p.y -= height;
 
