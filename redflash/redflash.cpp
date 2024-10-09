@@ -799,7 +799,7 @@ GeometryGroup createStaticGeometryScene1()
     std::string mesh_file = resolveDataPath("mesh/plane.obj");
     gis.push_back(createMesh(mesh_file, make_float3(0.0f, -8.0f, 0.0f), make_float3(10000.0f, 1.0f, 10000.0f)));
     mat.bsdf = GLASS;
-    mat.albedo = make_float3(10 / 255., 100 / 255., 252 / 255.);
+    mat.albedo = make_float3(10, 100, 252) / 255.;
     mat.metallic = 1.0;
     mat.roughness = 0.0;
     mat.eta = 1.1f;;
@@ -830,7 +830,7 @@ Group createDynamicGeometryScene0()
     mesh_file = resolveDataPath("mesh/door_glass.obj");
     Transform door_glass = createDynamicMesh(mesh_file, make_float3(-0.42f, 0.0f, -0.4f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
     mat.bsdf = GLASS;
-    mat.albedo = make_float3(0.7f, 1.0f, 0.7f);
+    mat.albedo = make_float3(0.5f, 1.0f, 0.5f);
     mat.eta = 1.45;
     registerMaterial(dynamic_scene0_gis.back(), mat);
     group->addChild(door_glass);
@@ -909,10 +909,10 @@ GeometryGroup createRaymarchingGeometryScene1()
     registerMaterial(gis.back(), mat, Tower);
 
     // Large MandelBox
-    mandelBox_center = make_float3(0.0f, 30.0f, 40.0f);
+    mandelBox_center = make_float3(0.0f, 40.0f, 40.0f);
     gis.push_back(createRaymrachingObject(
         mandelBox_center,
-        make_float3(40.0),
+        make_float3(40.5),
         dMandelBox));
     mat.albedo = make_float3(0.6);
     mat.metallic = 0.8f;
@@ -1154,9 +1154,9 @@ void updateFrame(float time)
             t = time - 9;
             // MandelBox俯瞰視点
             float e = easeInOutCubic(t);
-            camera_eye = make_float3(0.0f, 30 + 4 * e, -e * 20) + eye_shake;
+            camera_eye = mandelBox_center + make_float3(0, e * -40, -22 -e * 40) + eye_shake;
+            camera_lookat = mandelBox_center + make_float3(0, e * -10, 0);
             camera_fov = lerp(30, 90, e);
-            camera_lookat = mandelBox_center;
         }
 
         if (time >= 5)
@@ -1170,10 +1170,10 @@ void updateFrame(float time)
         // ドアの開閉
         float rad = TAU * easeInOutCubic(clamp(time - 2, 0.0, 2.0) / 2.0f) * 0.4;
         // rad = TAU * 2 / 5 * clamp(sin(time * TAU / 5), 0.0f, 1.0f);
-        Matrix4x4 mat = createMatrix(make_float3(-0.42, 0.0, -0.03), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
+        Matrix4x4 mat = createMatrix(make_float3(-0.42, 0.0, -0.01), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
         dynamic_scene0_transforms[0]->setMatrix(false, mat.getData(), false);
 
-        Matrix4x4 mat_glass = createMatrix(make_float3(0.0f, 0.0f, -0.02f), make_float3(1.0f));
+        Matrix4x4 mat_glass = createMatrix(make_float3(0.0f, 0.0f, -0.04f), make_float3(1.0f));
         mat_glass = mat * mat_glass;
         dynamic_scene0_transforms[1]->setMatrix(false, mat_glass.getData(), false);
 

@@ -331,7 +331,8 @@ float sdTowers(float3 pos)
     float2 rep = make_float2(3, 3);
     float3 p = opRepXZ(pos, rep);
     float2 grid = floor(make_float2(pos.x, pos.z) / rep);
-    float height = 3 + sin((hash12(grid * 0.001) + time / 4) * TAU);
+    float t = smoothstep(4, 10, time);
+    float height = clamp(1.0f + 10.0f * t * hash12(grid * 0.1), 2.0f, 4.0f);
 
     p.y -= height;
 
@@ -479,8 +480,9 @@ RT_CALLABLE_PROGRAM float4 RaymarchingMap_Ocean(float3 pos, int scene_id)
 RT_CALLABLE_PROGRAM float4 RaymarchingMap_MandelBox(float3 pos, int scene_id)
 {
     float scale = 4;
-    float3 p = (pos - make_float3(0.0f, 30.0f, 40.0f)) / scale;
-    float d = dMandelFast(p, 2.7 + 0.2 * sin(time), 20) * scale;
+    float3 p = (pos - mandelBox_center) / scale;
+    float mandelScale = lerp(2.8, 2.2, smoothstep(7, 10, time));
+    float d = dMandelFast(p, mandelScale, 20) * scale;
     float4 m0 = make_float4(d, M_Default, 0, 0);
     return m0;
 }
