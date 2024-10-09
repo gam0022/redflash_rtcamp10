@@ -13,6 +13,7 @@ cp %srcCudaDir%redflash.cu %dstDir%cuda\
 cp %srcCudaDir%bsdf_diffuse.cu %dstDir%cuda\
 cp %srcCudaDir%bsdf_disney.cu %dstDir%cuda\
 cp %srcCudaDir%bsdf_portal.cu %dstDir%cuda\
+cp %srcCudaDir%bsdf_glass.cu %dstDir%cuda\
 cp %srcCudaDir%intersect_raymarching.cu %dstDir%cuda\
 cp %srcCudaDir%intersect_sphere.cu %dstDir%cuda\
 cp %srcCudaDir%random.h %dstDir%cuda\
