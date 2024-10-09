@@ -828,8 +828,8 @@ Group createDynamicGeometryScene0()
     mesh_file = resolveDataPath("mesh/door_glass.obj");
     Transform door_glass = createDynamicMesh(mesh_file, make_float3(-0.42f, 0.0f, -0.4f), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), TAU * -0.3f);
     mat.bsdf = GLASS;
-    mat.albedo = make_float3(1.0f);
-    mat.eta = 1.4;
+    mat.albedo = make_float3(0.7f, 1.0f, 0.7f);
+    mat.eta = 1.45;
     registerMaterial(dynamic_scene0_gis.back(), mat);
     group->addChild(door_glass);
 

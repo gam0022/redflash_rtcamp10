@@ -329,10 +329,8 @@ float sdTowers(float3 pos)
 
     float2 rep = make_float2(3, 3);
     float3 p = opRepXZ(pos, rep);
-    // p = opRep(pos + make_float3(0, 4, 0), make_float3(3, 8, 3));
-
     float2 grid = floor(make_float2(pos.x, pos.z) / rep);
-    float height = 2.5 + 1.5 * sin(hash12(grid * 0.232) * TAU + time * 0.4);
+    float height = 3 + sin((hash12(grid * 0.001) + time / 4) * TAU);
 
     p.y -= height;
 
