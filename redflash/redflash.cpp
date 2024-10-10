@@ -1168,8 +1168,8 @@ void updateFrame(float time)
     if (update_dynamic)
     {
         // ドアの開閉
-        float rad = TAU * easeInOutCubic(clamp(time - 2, 0.0, 2.0) / 2.0f) * 0.4;
-        // rad = TAU * 2 / 5 * clamp(sin(time * TAU / 5), 0.0f, 1.0f);
+        // float rad = TAU * easeInOutCubic(clamp(time - 2, 0.0, 2.0) / 2.0f) * 0.4;
+        float rad = smoothstep(2, 4, time) * TAU * 0.35;
         Matrix4x4 mat = createMatrix(make_float3(-0.42, 0.0, -0.01), make_float3(1.0f), make_float3(0.0f, 1.0f, 0.0f), rad);
         dynamic_scene0_transforms[0]->setMatrix(false, mat.getData(), false);
 
@@ -1177,7 +1177,8 @@ void updateFrame(float time)
         mat_glass = mat * mat_glass;
         dynamic_scene0_transforms[1]->setMatrix(false, mat_glass.getData(), false);
 
-        Matrix4x4 mat_handle = createMatrix(make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 0.0f, 1.0f), time * 0.1 * TAU);
+        rad = smoothstep(1.5, 2, time) * TAU * 0.25;
+        Matrix4x4 mat_handle = createMatrix(make_float3(0.84f, 0.96f, 0.022f), make_float3(1.0f), make_float3(0.0f, 0.0f, 1.0f), rad);
         mat_handle = mat * mat_handle;
         dynamic_scene0_transforms[2]->setMatrix(false, mat_handle.getData(), false);
 

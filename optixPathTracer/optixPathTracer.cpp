@@ -335,7 +335,7 @@ void loadGeometry()
     context["top_shadower"]->set( shadow_group );
 
     // Light
-    gis.push_back( createParallelogram( make_float3( 343.0f, 548.6f, 227.0f),
+    gis.push_back( createParallelogram( make_float3( 343.0f - 100, 548.6f, 227.0f-100),
                                         make_float3( -130.0f, 0.0f, 0.0f),
                                         make_float3( 0.0f, 0.0f, 105.0f) ) );
     setMaterial(gis.back(), diffuse_light, "emission_color", light_em);
