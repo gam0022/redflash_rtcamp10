@@ -880,7 +880,7 @@ GeometryGroup createRaymarchingGeometryCommon()
     // Raymarcing
     gis.push_back(createRaymrachingObject(
         make_float3(0.0f, 1.0, -4),
-        make_float3(0.5f),
+        make_float3(0.58f),
         dBall));
     mat.albedo = make_float3(1.0);
     mat.metallic = 1.0;
