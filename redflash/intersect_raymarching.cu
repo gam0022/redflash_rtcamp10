@@ -445,7 +445,7 @@ RT_CALLABLE_PROGRAM float4 RaymarchingMap_Ball(float3 pos, int scene_id)
     float3 p = pos - ball_center;
     float freq = 8;
     float t = time;
-    float d = length(p) - 0.2 - 0.03 * (sin(p.x * freq + t + 0.3) + sin(p.y * freq + t) + sin(p.z * freq + t));
+    float d = length(p) - 0.2 - 0.05 * (sin(p.x * freq + t + 0.3) + sin(p.y * freq + t) + sin(p.z * freq + t));
     float4 m0 = make_float4(d, M_Default, 0, 0);
     return m0;
 }
