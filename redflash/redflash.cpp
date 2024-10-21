@@ -81,7 +81,7 @@ double animate_begin_time;
 double animate_time = 0.0f;
 
 // sampling
-int max_depth = 3;
+int max_depth = 5;
 int rr_begin_depth = 1;// ロシアンルーレット開始のdepth（未使用）
 int sample_per_launch = 1;
 int frame_number = 1;
@@ -1200,8 +1200,8 @@ void updateFrame(float time)
 
         context["ball_center"]->setFloat(ball_center);
         ball_g["center"]->setFloat(ball_center);
-        ball_g["aabb_min"]->setFloat(ball_center - 1 * 0.5f);
-        ball_g["aabb_max"]->setFloat(ball_center + 1 * 0.5f);
+        ball_g["aabb_min"]->setFloat(ball_center - 0.5f);
+        ball_g["aabb_max"]->setFloat(ball_center + 0.5f);
 
         raymarching_common_gg->getAcceleration()->markDirty();
         raymarching_common_gg->getContext()->launch(0, 0, 0);
