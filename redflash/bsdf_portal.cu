@@ -18,7 +18,7 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
     float3 dir = -prd.wo;
 
     // 板ポリを突き抜けるようなレイを生成
-    prd.origin = state.hitpoint + dir * 0.01f;
+    prd.origin = state.hitpoint + dir * 0.0001f;
 
     // レイの方向は維持する
     prd.direction = dir;

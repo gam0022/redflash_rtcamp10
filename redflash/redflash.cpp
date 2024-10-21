@@ -81,7 +81,7 @@ double animate_begin_time;
 double animate_time = 0.0f;
 
 // sampling
-int max_depth = 3;
+int max_depth = 5;
 int rr_begin_depth = 1;// ロシアンルーレット開始のdepth（未使用）
 int sample_per_launch = 1;
 int frame_number = 1;
@@ -401,6 +401,8 @@ GeometryInstance createSphereObject(const float3& center, const float radius)
     sphere["radius"]->setFloat(radius);
     sphere["aabb_min"]->setFloat(center - radius);
     sphere["aabb_max"]->setFloat(center + radius);
+
+    ball_g = sphere;
 
     GeometryInstance gi = context->createGeometryInstance();
     gi->setGeometry(sphere);
@@ -878,10 +880,13 @@ GeometryGroup createRaymarchingGeometryCommon()
     std::vector<GeometryInstance> gis;
 
     // Raymarcing
-    gis.push_back(createRaymrachingObject(
+    /*gis.push_back(createRaymrachingObject(
         make_float3(0.0f, 1.0, -4),
         make_float3(0.58f),
-        dBall));
+        dBall));*/
+    gis.push_back(createSphereObject(
+        make_float3(0.0f, 1.0, -4),
+        0.2f));
     mat.albedo = make_float3(1.0);
     mat.metallic = 1.0;
     mat.roughness = 0.0;
@@ -1200,8 +1205,8 @@ void updateFrame(float time)
 
         context["ball_center"]->setFloat(ball_center);
         ball_g["center"]->setFloat(ball_center);
-        ball_g["aabb_min"]->setFloat(ball_center - 1 * 0.5f);
-        ball_g["aabb_max"]->setFloat(ball_center + 1 * 0.5f);
+        ball_g["aabb_min"]->setFloat(ball_center - 0.2f);
+        ball_g["aabb_max"]->setFloat(ball_center + 0.2f);
 
         raymarching_common_gg->getAcceleration()->markDirty();
         raymarching_common_gg->getContext()->launch(0, 0, 0);
