@@ -24,6 +24,7 @@ The actual implementation is in the [redflash](https://github.com/gam0022/redfla
 - Materials
   - Disney BRDF
   - Lambert Diffuse
+  - Portal BSDF
 - Primitives
   - Sphere
   - Mesh
@@ -43,6 +44,8 @@ The actual implementation is in the [redflash](https://github.com/gam0022/redfla
   - OptiX 6.5.0
   - Cmake 3.24.0-rc5
   - freeglut
+  - [stb_image](https://github.com/nothings/stb/)
+  - [TinyObjLoader](https://github.com/tinyobjloader/tinyobjloader)
 
 ## Gallery
 
