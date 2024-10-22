@@ -1149,9 +1149,9 @@ void updateFrame(float time)
             float3 t0 = make_float3(0, 1.0f, 0);
             camera_lookat = lerp(t0, mandelBox_center, e);
         }
-        else if (time < 10)
+        else if (time < 10 + 2.)
         {
-            t = time - 9;
+            t = saturate(time - 9);
             // MandelBox俯瞰視点
             float e = easeInOutCubic(t);
             camera_eye = mandelBox_center + make_float3(0, e * -40, -22 -e * 40) + eye_shake;

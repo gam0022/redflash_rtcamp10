@@ -111,7 +111,7 @@ __device__ inline float3 posteffect(float3 col, float2 uv, float distance, int s
     // col = lerp(col, make_float3(0), smoothstep(0.3, 0, time));
 
     // fade out
-    // col = lerp(col, make_float3(0), smoothstep(9.7, 10, time));
+    col = lerp(col, make_float3(0), smoothstep(11, 12, time));
 
     return col;
 }
